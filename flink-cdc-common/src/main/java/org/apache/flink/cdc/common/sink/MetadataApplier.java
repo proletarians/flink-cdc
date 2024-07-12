@@ -26,6 +26,8 @@ import java.io.Serializable;
 @PublicEvolving
 public interface MetadataApplier extends Serializable {
 
+    void applyMetadata();
+
     /** Apply the given {@link SchemaChangeEvent} to external systems. */
     void applySchemaChange(SchemaChangeEvent schemaChangeEvent);
 }
