@@ -22,8 +22,6 @@
 package org.apache.flink.cdc.connectors.elasticsearch.v2;
 
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriterStateSerializer;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.Operation;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.OperationSerializer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

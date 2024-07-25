@@ -24,8 +24,6 @@ package org.apache.flink.cdc.connectors.elasticsearch.v2;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.NetworkConfig;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.Operation;
 import org.apache.flink.util.function.SerializableSupplier;
 
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperationVariant;

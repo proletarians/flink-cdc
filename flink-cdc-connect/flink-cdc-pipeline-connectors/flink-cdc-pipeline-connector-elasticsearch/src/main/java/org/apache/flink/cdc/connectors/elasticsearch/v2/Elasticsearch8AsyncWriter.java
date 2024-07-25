@@ -27,9 +27,6 @@ import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.connector.base.sink.writer.config.AsyncSinkWriterConfiguration;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.NetworkConfig;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.Operation;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.OperationSerializer;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -38,6 +35,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,7 +124,16 @@ public class Elasticsearch8AsyncWriter<InputT> extends AsyncSinkWriter<InputT, O
 
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Operation operation : requestEntries) {
-            br.operations(new BulkOperation(operation.getBulkOperationVariant()));
+//            if (operation.getBulkOperationVariant() == null&&requestEntries.size()==1) {
+//                return; // 跳过当前循环迭代
+//            }
+            if(operation.getBulkOperationVariant() == null)
+            {
+                continue;
+            }
+                br.operations(new BulkOperation(operation.getBulkOperationVariant()));
+
+
         }
 
         esClient.bulk(br.build())
@@ -166,8 +173,11 @@ public class Elasticsearch8AsyncWriter<InputT> extends AsyncSinkWriter<InputT, O
         LOG.debug("The BulkRequest has failed partially. Response: {}", response);
         ArrayList<Operation> failedItems = new ArrayList<>();
         for (int i = 0; i < response.items().size(); i++) {
-            if (response.items().get(i).error() != null) {
+            BulkResponseItem item = response.items().get(i);
+            if (item.error() != null) {
                 failedItems.add(requestEntries.get(i));
+
+                LOG.error("Failed operation {}: {}", i, item.error().reason());
             }
         }
 

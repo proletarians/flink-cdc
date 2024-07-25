@@ -1,24 +1,3 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
-
 package org.apache.flink.cdc.connectors.elasticsearch.v2;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -29,6 +8,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 
 /** OperationSerializer is responsible for serialization and deserialization of an Operation. */
 public class OperationSerializer {
@@ -41,24 +21,31 @@ public class OperationSerializer {
 
     public void serialize(Operation request, DataOutputStream out) {
         try (Output output = new Output(out)) {
-            kryo.writeObject(output, request);
+            kryo.writeObjectOrNull(output, request, Operation.class);
             output.flush();
         }
     }
 
     public Operation deserialize(long requestSize, DataInputStream in) {
         try (Input input = new Input(in, (int) requestSize)) {
-            return kryo.readObject(input, Operation.class);
+            if (input.available() > 0) {
+                return kryo.readObject(input, Operation.class);
+            } else {
+                return null; // Skip if input stream is empty
+            }
+        } catch (Exception e) {
+            // Handle the exception as needed, e.g., log the error
+            System.err.println("Failed to deserialize Operation: " + e.getMessage());
+            return null;
         }
     }
 
     public int size(Operation operation) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try (Output output = new Output(byteArrayOutputStream)) {
-            kryo.writeObject(output, operation);
+            kryo.writeObjectOrNull(output, operation, Operation.class);
             output.flush();
-
-            return (int) output.total();
+            return byteArrayOutputStream.size();
         }
     }
 }

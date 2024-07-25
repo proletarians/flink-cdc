@@ -1,107 +1,99 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.flink.cdc.connectors.elasticsearch.sink;
 
-import java.util.Objects;
+import org.apache.flink.cdc.common.configuration.ConfigOption;
+import org.apache.flink.cdc.common.configuration.ConfigOptions;
 
-public class ElasticsearchDataSinkOptions{
+/** Options for the Elasticsearch data sink. */
+public class ElasticsearchDataSinkOptions {
 
-    private static final long serialVersionUID = 1L;
+    /** The comma-separated list of Elasticsearch hosts to connect to. */
+    public static final ConfigOption<String> HOSTS =
+            ConfigOptions.key("hosts")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The comma-separated list of Elasticsearch hosts to connect to.");
 
-    private final String clusterAddress;
-    private final String indexName;
-    private final String username;
-    private final String password;
-    private final boolean useSSL;
-    private final int batchSize;
-    private final int flushIntervalMillis;
+    /** The maximum number of actions to buffer for each bulk request. */
+    public static final ConfigOption<Integer> MAX_BATCH_SIZE =
+            ConfigOptions.key("batch.size.max")
+                    .intType()
+                    .defaultValue(500)
+                    .withDescription("The maximum number of actions to buffer for each bulk request.");
 
-    private ElasticsearchDataSinkOptions(Builder builder, String password) {
-        this.clusterAddress = Objects.requireNonNull(builder.clusterAddress, "clusterAddress");
-        this.indexName = Objects.requireNonNull(builder.indexName, "indexName");
-        this.username = builder.username;
-        this.password = password;
-        this.useSSL = builder.useSSL;
-        this.batchSize = builder.batchSize;
-        this.flushIntervalMillis = builder.flushIntervalMillis;
-    }
+    /** The maximum number of concurrent requests that the sink will try to execute. */
+    public static final ConfigOption<Integer> MAX_IN_FLIGHT_REQUESTS =
+            ConfigOptions.key("inflight.requests.max")
+                    .intType()
+                    .defaultValue(5)
+                    .withDescription("The maximum number of concurrent requests that the sink will try to execute.");
 
-    public String getClusterAddress() {
-        return clusterAddress;
-    }
+    /** The maximum number of requests to keep in the in-memory buffer. */
+    public static final ConfigOption<Integer> MAX_BUFFERED_REQUESTS =
+            ConfigOptions.key("buffered.requests.max")
+                    .intType()
+                    .defaultValue(1000)
+                    .withDescription("The maximum number of requests to keep in the in-memory buffer.");
 
-    public String getIndexName() {
-        return indexName;
-    }
+    /** The maximum size of batch requests in bytes. */
+    public static final ConfigOption<Long> MAX_BATCH_SIZE_IN_BYTES =
+            ConfigOptions.key("batch.size.max.bytes")
+                    .longType()
+                    .defaultValue(5L * 1024L * 1024L)
+                    .withDescription("The maximum size of batch requests in bytes.");
 
-    public String getUsername() {
-        return username;
-    }
+    /** The maximum time to wait for incomplete batches before flushing. */
+    public static final ConfigOption<Long> MAX_TIME_IN_BUFFER_MS =
+            ConfigOptions.key("buffer.time.max.ms")
+                    .longType()
+                    .defaultValue(5000L)
+                    .withDescription("The maximum time to wait for incomplete batches before flushing.");
 
-    public String getPassword() {
-        return password;
-    }
+    /** The maximum size of a single record in bytes. */
+    public static final ConfigOption<Long> MAX_RECORD_SIZE_IN_BYTES =
+            ConfigOptions.key("record.size.max.bytes")
+                    .longType()
+                    .defaultValue(10L * 1024L * 1024L)
+                    .withDescription("The maximum size of a single record in bytes.");
 
-    public boolean useSSL() {
-        return useSSL;
-    }
+    /** The Elasticsearch index name to write to. */
+    public static final ConfigOption<String> INDEX =
+            ConfigOptions.key("index")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The Elasticsearch index name to write to.");
 
-    public int getBatchSize() {
-        return batchSize;
-    }
+    /** The username for Elasticsearch authentication. */
+    public static final ConfigOption<String> USERNAME =
+            ConfigOptions.key("username")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The username for Elasticsearch authentication.");
 
-    public int getFlushIntervalMillis() {
-        return flushIntervalMillis;
-    }
+    /** The password for Elasticsearch authentication. */
+    public static final ConfigOption<String> PASSWORD =
+            ConfigOptions.key("password")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The password for Elasticsearch authentication.");
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-        private String clusterAddress;
-        private String indexName;
-        private String username;
-        private String password;
-        private boolean useSSL = false;
-        private int batchSize = 1000;
-        private int flushIntervalMillis = 10000;
-
-        private Builder() {
-        }
-
-        public Builder clusterAddress(String clusterAddress) {
-            this.clusterAddress = clusterAddress;
-            return this;
-        }
-
-        public Builder indexName(String indexName) {
-            this.indexName = indexName;
-            return this;
-        }
-
-        public Builder username(String username) {
-            this.username = username;
-            return this;
-        }
-
-        public Builder password(String password) {
-            this.password = password;
-            return this;
-        }
-
-        public Builder useSSL(boolean useSSL) {
-            this.useSSL = useSSL;
-            return this;
-        }
-
-        public Builder batchSize(int batchSize) {
-            this.batchSize = batchSize;
-            return this;
-        }
-
-        public Builder flushIntervalMillis(int flushIntervalMillis) {
-            this.flushIntervalMillis = flushIntervalMillis;
-            return this;
-        }
-
+    private ElasticsearchDataSinkOptions() {
+        // This class should not be instantiated
     }
 }

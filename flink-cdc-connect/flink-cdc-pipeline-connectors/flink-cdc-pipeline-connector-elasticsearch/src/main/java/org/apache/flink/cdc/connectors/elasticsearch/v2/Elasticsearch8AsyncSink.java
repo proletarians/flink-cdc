@@ -21,13 +21,10 @@
 
 package org.apache.flink.cdc.connectors.elasticsearch.v2;
 
-
 import org.apache.flink.annotation.VisibleForTesting;
-
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.BufferedRequestState;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.cdc.connectors.elasticsearch.v2.*;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import org.slf4j.Logger;

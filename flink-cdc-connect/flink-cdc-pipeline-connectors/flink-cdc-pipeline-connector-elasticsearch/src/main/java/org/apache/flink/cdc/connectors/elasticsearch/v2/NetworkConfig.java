@@ -116,6 +116,7 @@ public class NetworkConfig implements Serializable {
 
         return credentialsProvider;
     }
+
     public List<HttpHost> getHosts() {
         return this.hosts;
     }
