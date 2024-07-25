@@ -8,7 +8,6 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 
 /** OperationSerializer is responsible for serialization and deserialization of an Operation. */
 public class OperationSerializer {

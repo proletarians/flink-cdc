@@ -21,9 +21,9 @@ import org.apache.flink.cdc.common.event.SchemaChangeEvent;
 import org.apache.flink.cdc.common.sink.MetadataApplier;
 
 /**
- * A metadata applier for Elasticsearch that handles schema change events.
- * This class is responsible for applying metadata changes to the Elasticsearch index
- * based on schema change events from the CDC source.
+ * A metadata applier for Elasticsearch that handles schema change events. This class is responsible
+ * for applying metadata changes to the Elasticsearch index based on schema change events from the
+ * CDC source.
  */
 public class ElasticsearchMetadataApplier implements MetadataApplier {
 
@@ -39,6 +39,7 @@ public class ElasticsearchMetadataApplier implements MetadataApplier {
         // - Creating new indices
         // - Updating existing index mappings
         // - Handling column additions or deletions
-        throw new UnsupportedOperationException("Schema change application is not yet implemented for Elasticsearch.");
+        throw new UnsupportedOperationException(
+                "Schema change application is not yet implemented for Elasticsearch.");
     }
 }

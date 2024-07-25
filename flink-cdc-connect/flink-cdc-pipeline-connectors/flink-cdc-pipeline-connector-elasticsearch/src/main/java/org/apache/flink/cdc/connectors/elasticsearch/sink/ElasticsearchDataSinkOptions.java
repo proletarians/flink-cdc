@@ -28,28 +28,32 @@ public class ElasticsearchDataSinkOptions {
             ConfigOptions.key("hosts")
                     .stringType()
                     .noDefaultValue()
-                    .withDescription("The comma-separated list of Elasticsearch hosts to connect to.");
+                    .withDescription(
+                            "The comma-separated list of Elasticsearch hosts to connect to.");
 
     /** The maximum number of actions to buffer for each bulk request. */
     public static final ConfigOption<Integer> MAX_BATCH_SIZE =
             ConfigOptions.key("batch.size.max")
                     .intType()
                     .defaultValue(500)
-                    .withDescription("The maximum number of actions to buffer for each bulk request.");
+                    .withDescription(
+                            "The maximum number of actions to buffer for each bulk request.");
 
     /** The maximum number of concurrent requests that the sink will try to execute. */
     public static final ConfigOption<Integer> MAX_IN_FLIGHT_REQUESTS =
             ConfigOptions.key("inflight.requests.max")
                     .intType()
                     .defaultValue(5)
-                    .withDescription("The maximum number of concurrent requests that the sink will try to execute.");
+                    .withDescription(
+                            "The maximum number of concurrent requests that the sink will try to execute.");
 
     /** The maximum number of requests to keep in the in-memory buffer. */
     public static final ConfigOption<Integer> MAX_BUFFERED_REQUESTS =
             ConfigOptions.key("buffered.requests.max")
                     .intType()
                     .defaultValue(1000)
-                    .withDescription("The maximum number of requests to keep in the in-memory buffer.");
+                    .withDescription(
+                            "The maximum number of requests to keep in the in-memory buffer.");
 
     /** The maximum size of batch requests in bytes. */
     public static final ConfigOption<Long> MAX_BATCH_SIZE_IN_BYTES =
@@ -63,7 +67,8 @@ public class ElasticsearchDataSinkOptions {
             ConfigOptions.key("buffer.time.max.ms")
                     .longType()
                     .defaultValue(5000L)
-                    .withDescription("The maximum time to wait for incomplete batches before flushing.");
+                    .withDescription(
+                            "The maximum time to wait for incomplete batches before flushing.");
 
     /** The maximum size of a single record in bytes. */
     public static final ConfigOption<Long> MAX_RECORD_SIZE_IN_BYTES =

@@ -20,7 +20,6 @@ package org.apache.flink.cdc.connectors.elasticsearch.sink;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.sink2.Sink;
-import org.apache.flink.cdc.common.configuration.Configuration;
 import org.apache.flink.cdc.common.data.binary.BinaryRecordData;
 import org.apache.flink.cdc.common.data.binary.BinaryStringData;
 import org.apache.flink.cdc.common.event.*;
@@ -62,20 +61,22 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * ITCase tests for {@link ElasticsearchDataSink}.
- */
+/** ITCase tests for {@link ElasticsearchDataSink}. */
 @Testcontainers
 public class ElasticsearchDataSinkITCaseTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchDataSinkITCaseTest.class);
+    private static final Logger LOG =
+            LoggerFactory.getLogger(ElasticsearchDataSinkITCaseTest.class);
     private static final String ELASTICSEARCH_VERSION = "8.12.0";
     private static final DockerImageName ELASTICSEARCH_IMAGE =
-            DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:" + ELASTICSEARCH_VERSION)
+            DockerImageName.parse(
+                            "docker.elastic.co/elasticsearch/elasticsearch:"
+                                    + ELASTICSEARCH_VERSION)
                     .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch");
 
     @Container
-    private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = createElasticsearchContainer();
+    private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER =
+            createElasticsearchContainer();
 
     private ElasticsearchClient client;
 
@@ -132,17 +133,23 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private ElasticsearchClient createElasticsearchClient() {
-        RestClientTransport transport = new RestClientTransport(
-                RestClient.builder(new HttpHost(ELASTICSEARCH_CONTAINER.getHost(),
-                        ELASTICSEARCH_CONTAINER.getFirstMappedPort(), "http")).build(),
-                new JacksonJsonpMapper());
+        RestClientTransport transport =
+                new RestClientTransport(
+                        RestClient.builder(
+                                        new HttpHost(
+                                                ELASTICSEARCH_CONTAINER.getHost(),
+                                                ELASTICSEARCH_CONTAINER.getFirstMappedPort(),
+                                                "http"))
+                                .build(),
+                        new JacksonJsonpMapper());
         return new ElasticsearchClient(transport);
     }
 
     private void runJobWithEvents(List<Event> events) throws Exception {
         ElasticsearchSinkOptions options = createSinkOptions();
         StreamExecutionEnvironment env = createStreamExecutionEnvironment();
-        ElasticsearchDataSink<Event> sink = new ElasticsearchDataSink<>(options, ZoneId.systemDefault());
+        ElasticsearchDataSink<Event> sink =
+                new ElasticsearchDataSink<>(options, ZoneId.systemDefault());
 
         DataStream<Event> stream = env.fromCollection(events, TypeInformation.of(Event.class));
         Sink<Event> elasticsearchSink = ((FlinkSinkProvider) sink.getEventSinkProvider()).getSink();
@@ -152,13 +159,20 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private ElasticsearchSinkOptions createSinkOptions() {
-        NetworkConfig networkConfig = new NetworkConfig(
-                Collections.singletonList(new HttpHost(ELASTICSEARCH_CONTAINER.getHost(),
-                        ELASTICSEARCH_CONTAINER.getFirstMappedPort())),
-                null, null, null, null, null);
+        NetworkConfig networkConfig =
+                new NetworkConfig(
+                        Collections.singletonList(
+                                new HttpHost(
+                                        ELASTICSEARCH_CONTAINER.getHost(),
+                                        ELASTICSEARCH_CONTAINER.getFirstMappedPort())),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
 
-        return new ElasticsearchSinkOptions(5, 1, 10, 50 * 1024 * 1024,
-                1000, 10 * 1024 * 1024, networkConfig);
+        return new ElasticsearchSinkOptions(
+                5, 1, 10, 50 * 1024 * 1024, 1000, 10 * 1024 * 1024, networkConfig);
     }
 
     private StreamExecutionEnvironment createStreamExecutionEnvironment() {
@@ -169,7 +183,9 @@ public class ElasticsearchDataSinkITCaseTest {
         return env;
     }
 
-    private void verifyInsertedData(TableId tableId, String id, int expectedId, double expectedNumber, String expectedName) throws Exception {
+    private void verifyInsertedData(
+            TableId tableId, String id, int expectedId, double expectedNumber, String expectedName)
+            throws Exception {
         GetRequest getRequest = new GetRequest.Builder().index(tableId.toString()).id(id).build();
         GetResponse<Map> response = client.get(getRequest, Map.class);
 
@@ -186,8 +202,14 @@ public class ElasticsearchDataSinkITCaseTest {
         assertThat(response.source()).isNull();
     }
 
-    private void verifyInsertedDataWithNewColumn(TableId tableId, String id, int expectedId, double expectedNumber,
-                                                 String expectedName, boolean expectedExtraBool) throws Exception {
+    private void verifyInsertedDataWithNewColumn(
+            TableId tableId,
+            String id,
+            int expectedId,
+            double expectedNumber,
+            String expectedName,
+            boolean expectedExtraBool)
+            throws Exception {
         GetRequest getRequest = new GetRequest.Builder().index(tableId.toString()).id(id).build();
         GetResponse<Map> response = client.get(getRequest, Map.class);
 
@@ -199,42 +221,55 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private List<Event> createTestEvents(TableId tableId) {
-        Schema schema = Schema.newBuilder()
-                .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
-                .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
-                .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
-                .primaryKey("id")
-                .build();
+        Schema schema =
+                Schema.newBuilder()
+                        .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
+                        .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
+                        .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
+                        .primaryKey("id")
+                        .build();
 
-        BinaryRecordDataGenerator generator = new BinaryRecordDataGenerator(
-                org.apache.flink.cdc.common.types.RowType.of(
-                        org.apache.flink.cdc.common.types.DataTypes.INT(),
-                        org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
-                        org.apache.flink.cdc.common.types.DataTypes.STRING()));
+        BinaryRecordDataGenerator generator =
+                new BinaryRecordDataGenerator(
+                        org.apache.flink.cdc.common.types.RowType.of(
+                                org.apache.flink.cdc.common.types.DataTypes.INT(),
+                                org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
+                                org.apache.flink.cdc.common.types.DataTypes.STRING()));
 
         return Arrays.asList(
                 new CreateTableEvent(tableId, schema),
-                DataChangeEvent.insertEvent(tableId, generator.generate(new Object[]{1, 1.0, BinaryStringData.fromString("value1")})),
-                DataChangeEvent.insertEvent(tableId, generator.generate(new Object[]{2, 2.0, BinaryStringData.fromString("value2")})));
+                DataChangeEvent.insertEvent(
+                        tableId,
+                        generator.generate(
+                                new Object[] {1, 1.0, BinaryStringData.fromString("value1")})),
+                DataChangeEvent.insertEvent(
+                        tableId,
+                        generator.generate(
+                                new Object[] {2, 2.0, BinaryStringData.fromString("value2")})));
     }
 
     private List<Event> createTestEventsWithDelete(TableId tableId) {
-        Schema schema = Schema.newBuilder()
-                .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
-                .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
-                .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
-                .primaryKey("id")
-                .build();
+        Schema schema =
+                Schema.newBuilder()
+                        .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
+                        .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
+                        .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
+                        .primaryKey("id")
+                        .build();
 
-        BinaryRecordDataGenerator generator = new BinaryRecordDataGenerator(
-                org.apache.flink.cdc.common.types.RowType.of(
-                        org.apache.flink.cdc.common.types.DataTypes.INT(),
-                        org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
-                        org.apache.flink.cdc.common.types.DataTypes.STRING()));
+        BinaryRecordDataGenerator generator =
+                new BinaryRecordDataGenerator(
+                        org.apache.flink.cdc.common.types.RowType.of(
+                                org.apache.flink.cdc.common.types.DataTypes.INT(),
+                                org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
+                                org.apache.flink.cdc.common.types.DataTypes.STRING()));
 
-        BinaryRecordData insertRecord1 = generator.generate(new Object[]{1, 1.0, BinaryStringData.fromString("value1")});
-        BinaryRecordData insertRecord2 = generator.generate(new Object[]{2, 2.0, BinaryStringData.fromString("value2")});
-        BinaryRecordData deleteRecord = generator.generate(new Object[]{2, 2.0, BinaryStringData.fromString("value2")});
+        BinaryRecordData insertRecord1 =
+                generator.generate(new Object[] {1, 1.0, BinaryStringData.fromString("value1")});
+        BinaryRecordData insertRecord2 =
+                generator.generate(new Object[] {2, 2.0, BinaryStringData.fromString("value2")});
+        BinaryRecordData deleteRecord =
+                generator.generate(new Object[] {2, 2.0, BinaryStringData.fromString("value2")});
 
         return Arrays.asList(
                 new CreateTableEvent(tableId, schema),
@@ -244,24 +279,35 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private List<Event> createTestEventsWithAddColumn(TableId tableId) {
-        Schema schema = Schema.newBuilder()
-                .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
-                .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
-                .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
-                .primaryKey("id")
-                .build();
+        Schema schema =
+                Schema.newBuilder()
+                        .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
+                        .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
+                        .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
+                        .primaryKey("id")
+                        .build();
 
-        BinaryRecordDataGenerator generator = new BinaryRecordDataGenerator(
-                org.apache.flink.cdc.common.types.RowType.of(
-                        org.apache.flink.cdc.common.types.DataTypes.INT(),
-                        org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
-                        org.apache.flink.cdc.common.types.DataTypes.STRING(),
-                        org.apache.flink.cdc.common.types.DataTypes.BOOLEAN()));
+        BinaryRecordDataGenerator generator =
+                new BinaryRecordDataGenerator(
+                        org.apache.flink.cdc.common.types.RowType.of(
+                                org.apache.flink.cdc.common.types.DataTypes.INT(),
+                                org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
+                                org.apache.flink.cdc.common.types.DataTypes.STRING(),
+                                org.apache.flink.cdc.common.types.DataTypes.BOOLEAN()));
 
         return Arrays.asList(
                 new CreateTableEvent(tableId, schema),
-                new AddColumnEvent(tableId, Collections.singletonList(
-                        new AddColumnEvent.ColumnWithPosition(new PhysicalColumn("extra_bool", DataTypes.BOOLEAN(), null)))),
-                DataChangeEvent.insertEvent(tableId, generator.generate(new Object[]{3, 3.0, BinaryStringData.fromString("value3"), true})));
+                new AddColumnEvent(
+                        tableId,
+                        Collections.singletonList(
+                                new AddColumnEvent.ColumnWithPosition(
+                                        new PhysicalColumn(
+                                                "extra_bool", DataTypes.BOOLEAN(), null)))),
+                DataChangeEvent.insertEvent(
+                        tableId,
+                        generator.generate(
+                                new Object[] {
+                                    3, 3.0, BinaryStringData.fromString("value3"), true
+                                })));
     }
 }

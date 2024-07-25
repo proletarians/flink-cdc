@@ -246,8 +246,6 @@ public interface RecordData {
         };
     }
 
-    Object get(int i);
-
     /**
      * Accessor for getting the field of a RecordData during runtime.
      *

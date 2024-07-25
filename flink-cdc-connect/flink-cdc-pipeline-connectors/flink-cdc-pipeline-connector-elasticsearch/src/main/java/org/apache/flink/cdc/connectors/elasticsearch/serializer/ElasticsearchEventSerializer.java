@@ -88,26 +88,34 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             Schema schema = ((CreateTableEvent) schemaChangeEvent).getSchema();
             schemaMaps.put(tableId, schema);
             return createSchemaIndexOperation(tableId, schema);
-        } else if (schemaChangeEvent instanceof AddColumnEvent || schemaChangeEvent instanceof DropColumnEvent) {
+        } else if (schemaChangeEvent instanceof AddColumnEvent
+                || schemaChangeEvent instanceof DropColumnEvent) {
             if (!schemaMaps.containsKey(tableId)) {
                 throw new RuntimeException("Schema of " + tableId + " does not exist.");
             }
-            Schema updatedSchema = SchemaUtils.applySchemaChangeEvent(schemaMaps.get(tableId), schemaChangeEvent);
+            Schema updatedSchema =
+                    SchemaUtils.applySchemaChangeEvent(schemaMaps.get(tableId), schemaChangeEvent);
             schemaMaps.put(tableId, updatedSchema);
             return createSchemaIndexOperation(tableId, updatedSchema);
         } else {
             if (!schemaMaps.containsKey(tableId)) {
                 throw new RuntimeException("Schema of " + tableId + " does not exist.");
             }
-            Schema updatedSchema = SchemaUtils.applySchemaChangeEvent(schemaMaps.get(tableId), schemaChangeEvent);
+            Schema updatedSchema =
+                    SchemaUtils.applySchemaChangeEvent(schemaMaps.get(tableId), schemaChangeEvent);
             schemaMaps.put(tableId, updatedSchema);
         }
         return null;
     }
 
-    private IndexOperation<Map<String, Object>> createSchemaIndexOperation(TableId tableId, Schema schema) {
+    private IndexOperation<Map<String, Object>> createSchemaIndexOperation(
+            TableId tableId, Schema schema) {
         Map<String, Object> schemaMap = new HashMap<>();
-        schemaMap.put("columns", schema.getColumns().stream().map(Column::asSummaryString).collect(Collectors.toList()));
+        schemaMap.put(
+                "columns",
+                schema.getColumns().stream()
+                        .map(Column::asSummaryString)
+                        .collect(Collectors.toList()));
         schemaMap.put("primaryKeys", schema.primaryKeys());
         schemaMap.put("options", schema.options());
 
@@ -126,7 +134,9 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
         Map<String, Object> valueMap;
         OperationType op = event.op();
 
-        Object[] uniqueId = generateUniqueId(op == OperationType.DELETE ? event.before() : event.after(), schema);
+        Object[] uniqueId =
+                generateUniqueId(
+                        op == OperationType.DELETE ? event.before() : event.after(), schema);
         String id = Arrays.stream(uniqueId).map(Object::toString).collect(Collectors.joining("_"));
 
         switch (op) {
@@ -149,14 +159,20 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
     private Object[] generateUniqueId(RecordData recordData, Schema schema) {
         List<String> primaryKeys = schema.primaryKeys();
         return primaryKeys.stream()
-                .map(primaryKey -> {
-                    Column column = schema.getColumns().stream()
-                            .filter(col -> col.getName().equals(primaryKey))
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalStateException("Primary key column not found: " + primaryKey));
-                    int index = schema.getColumns().indexOf(column);
-                    return getFieldValue(recordData, column.getType(), index);
-                })
+                .map(
+                        primaryKey -> {
+                            Column column =
+                                    schema.getColumns().stream()
+                                            .filter(col -> col.getName().equals(primaryKey))
+                                            .findFirst()
+                                            .orElseThrow(
+                                                    () ->
+                                                            new IllegalStateException(
+                                                                    "Primary key column not found: "
+                                                                            + primaryKey));
+                            int index = schema.getColumns().indexOf(column);
+                            return getFieldValue(recordData, column.getType(), index);
+                        })
                 .toArray();
     }
 

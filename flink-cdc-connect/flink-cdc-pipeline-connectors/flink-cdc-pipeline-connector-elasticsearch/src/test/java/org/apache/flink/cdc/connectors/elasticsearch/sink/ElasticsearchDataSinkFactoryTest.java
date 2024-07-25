@@ -37,16 +37,12 @@ import java.util.stream.Collectors;
 
 import static org.apache.flink.cdc.connectors.elasticsearch.sink.ElasticsearchDataSinkOptions.*;
 
-/**
- * Tests for {@link ElasticsearchDataSinkFactory}.
- */
+/** Tests for {@link ElasticsearchDataSinkFactory}. */
 public class ElasticsearchDataSinkFactoryTest {
 
     private static final String ELASTICSEARCH_IDENTIFIER = "elasticsearch";
 
-    /**
-     * Tests the creation of an Elasticsearch DataSink with valid configuration.
-     */
+    /** Tests the creation of an Elasticsearch DataSink with valid configuration. */
     @Test
     void testCreateDataSink() {
         DataSinkFactory sinkFactory = getElasticsearchDataSinkFactory();
@@ -57,9 +53,7 @@ public class ElasticsearchDataSinkFactoryTest {
         Assertions.assertThat(dataSink).isInstanceOf(ElasticsearchDataSink.class);
     }
 
-    /**
-     * Tests the behavior when a required option is missing.
-     */
+    /** Tests the behavior when a required option is missing. */
     @Test
     void testLackRequiredOption() {
         DataSinkFactory sinkFactory = getElasticsearchDataSinkFactory();
@@ -83,19 +77,18 @@ public class ElasticsearchDataSinkFactoryTest {
         }
     }
 
-    /**
-     * Tests the behavior when an unsupported option is provided.
-     */
+    /** Tests the behavior when an unsupported option is provided. */
     @Test
     void testUnsupportedOption() {
         DataSinkFactory sinkFactory = getElasticsearchDataSinkFactory();
 
-        Configuration conf = Configuration.fromMap(
-                ImmutableMap.<String, String>builder()
-                        .put("hosts", "localhost:9200")
-                        .put("index", "test-index")
-                        .put("unsupported_key", "unsupported_value")
-                        .build());
+        Configuration conf =
+                Configuration.fromMap(
+                        ImmutableMap.<String, String>builder()
+                                .put("hosts", "localhost:9200")
+                                .put("index", "test-index")
+                                .put("unsupported_key", "unsupported_value")
+                                .build());
 
         Assertions.assertThatThrownBy(() -> createDataSink(sinkFactory, conf))
                 .isInstanceOf(ValidationException.class)
@@ -106,19 +99,21 @@ public class ElasticsearchDataSinkFactoryTest {
     }
 
     /**
-     * Tests the creation of an Elasticsearch DataSink with valid configuration using prefixed options.
+     * Tests the creation of an Elasticsearch DataSink with valid configuration using prefixed
+     * options.
      */
     @Test
     void testPrefixedRequiredOption() {
         DataSinkFactory sinkFactory = getElasticsearchDataSinkFactory();
 
-        Configuration conf = Configuration.fromMap(
-                ImmutableMap.<String, String>builder()
-                        .put("sink.hosts", "localhost:9200")
-                        .put("sink.index", "test-index")
-                        .put("sink.batch.size.max", "500")
-                        .put("sink.inflight.requests.max", "5")
-                        .build());
+        Configuration conf =
+                Configuration.fromMap(
+                        ImmutableMap.<String, String>builder()
+                                .put("sink.hosts", "localhost:9200")
+                                .put("sink.index", "test-index")
+                                .put("sink.batch.size.max", "500")
+                                .put("sink.inflight.requests.max", "5")
+                                .build());
 
         DataSink dataSink = createDataSink(sinkFactory, conf);
         Assertions.assertThat(dataSink).isInstanceOf(ElasticsearchDataSink.class);
@@ -127,8 +122,9 @@ public class ElasticsearchDataSinkFactoryTest {
     // Helper methods
 
     private DataSinkFactory getElasticsearchDataSinkFactory() {
-        DataSinkFactory sinkFactory = FactoryDiscoveryUtils.getFactoryByIdentifier(
-                ELASTICSEARCH_IDENTIFIER, DataSinkFactory.class);
+        DataSinkFactory sinkFactory =
+                FactoryDiscoveryUtils.getFactoryByIdentifier(
+                        ELASTICSEARCH_IDENTIFIER, DataSinkFactory.class);
         Assertions.assertThat(sinkFactory).isInstanceOf(ElasticsearchDataSinkFactory.class);
         return sinkFactory;
     }

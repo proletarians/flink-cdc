@@ -59,10 +59,8 @@ public abstract class Column implements Serializable {
         return name;
     }
 
-    /**
-     * Returns the data type of this column.
-     */
-    public String getType() {
+    /** Returns the data type of this column. */
+    public DataType getType() {
         return type;
     }
 

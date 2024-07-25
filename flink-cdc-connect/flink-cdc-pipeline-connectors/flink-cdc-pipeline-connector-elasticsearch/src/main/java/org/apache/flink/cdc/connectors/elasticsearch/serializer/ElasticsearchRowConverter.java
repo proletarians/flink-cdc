@@ -17,23 +17,23 @@
 
 package org.apache.flink.cdc.connectors.elasticsearch.serializer;
 
-import org.apache.flink.cdc.common.data.RecordData;
 import org.apache.flink.cdc.common.data.DecimalData;
+import org.apache.flink.cdc.common.data.RecordData;
 import org.apache.flink.cdc.common.data.TimestampData;
-import org.apache.flink.cdc.common.data.binary.BinaryRecordData;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Converter class for serializing row data to Elasticsearch compatible formats.
- */
+/** Converter class for serializing row data to Elasticsearch compatible formats. */
 public class ElasticsearchRowConverter {
 
     // Date and time formatters for various temporal types
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSS");
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSS");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
     /**
      * Creates a nullable external converter for the given column type and time zone.
@@ -71,9 +71,10 @@ public class ElasticsearchRowConverter {
      * @param zoneId The time zone to use for temporal conversions.
      * @return A SerializationConverter for the specified column type.
      */
-    static SerializationConverter createExternalConverter(ColumnType columnType, java.time.ZoneId zoneId) {
+    static SerializationConverter createExternalConverter(
+            ColumnType columnType, java.time.ZoneId zoneId) {
         switch (columnType) {
-            // Basic types
+                // Basic types
             case BOOLEAN:
                 return (pos, data) -> data.getBoolean(pos);
             case INTEGER:
@@ -95,14 +96,14 @@ public class ElasticsearchRowConverter {
             case VARBINARY:
                 return (pos, data) -> data.getBinary(pos);
 
-            // Decimal type
+                // Decimal type
             case DECIMAL:
                 return (pos, data) -> {
                     DecimalData decimalData = data.getDecimal(pos, 17, 2);
                     return decimalData != null ? decimalData.toBigDecimal().toString() : null;
                 };
 
-            // Date and time types
+                // Date and time types
             case DATE:
                 return (pos, data) -> {
                     int days = data.getInt(pos);
@@ -118,7 +119,11 @@ public class ElasticsearchRowConverter {
             case TIMESTAMP_WITHOUT_TIME_ZONE:
                 return (pos, data) -> {
                     long milliseconds = data.getTimestamp(pos, 6).getMillisecond();
-                    LocalDateTime dateTime = LocalDateTime.ofEpochSecond(milliseconds / 1000, (int) (milliseconds % 1000) * 1_000_000, java.time.ZoneOffset.UTC);
+                    LocalDateTime dateTime =
+                            LocalDateTime.ofEpochSecond(
+                                    milliseconds / 1000,
+                                    (int) (milliseconds % 1000) * 1_000_000,
+                                    java.time.ZoneOffset.UTC);
                     return dateTime.format(DATE_TIME_FORMATTER);
                 };
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
@@ -129,7 +134,8 @@ public class ElasticsearchRowConverter {
                         }
 
                         // Debug logging
-                        System.out.println("Processing TIMESTAMP_WITH_LOCAL_TIME_ZONE at position: " + pos);
+                        System.out.println(
+                                "Processing TIMESTAMP_WITH_LOCAL_TIME_ZONE at position: " + pos);
                         System.out.println("Data type: " + data.getClass().getName());
 
                         // Attempt to retrieve timestamp data
@@ -147,10 +153,10 @@ public class ElasticsearchRowConverter {
                         }
 
                         // Create Instant object
-                        Instant instant = Instant.ofEpochSecond(
-                                milliseconds / 1000,
-                                (milliseconds % 1000) * 1_000_000L + nanos
-                        );
+                        Instant instant =
+                                Instant.ofEpochSecond(
+                                        milliseconds / 1000,
+                                        (milliseconds % 1000) * 1_000_000L + nanos);
 
                         // Format timestamp using UTC timezone
                         return DateTimeFormatter.ISO_INSTANT.format(instant);
@@ -162,11 +168,15 @@ public class ElasticsearchRowConverter {
             case TIMESTAMP_WITH_TIME_ZONE:
                 return (pos, data) -> {
                     long milliseconds = data.getTimestamp(pos, 6).getMillisecond();
-                    LocalDateTime dateTime = LocalDateTime.ofEpochSecond(milliseconds / 1000, (int) (milliseconds % 1000) * 1_000_000, zoneId.getRules().getOffset(java.time.Instant.now()));
+                    LocalDateTime dateTime =
+                            LocalDateTime.ofEpochSecond(
+                                    milliseconds / 1000,
+                                    (int) (milliseconds % 1000) * 1_000_000,
+                                    zoneId.getRules().getOffset(java.time.Instant.now()));
                     return dateTime.atZone(zoneId).format(DATE_TIME_FORMATTER);
                 };
 
-            // Complex types
+                // Complex types
             case ARRAY:
                 return (pos, data) -> data.getArray(pos);
             case MAP:
@@ -181,9 +191,7 @@ public class ElasticsearchRowConverter {
         }
     }
 
-    /**
-     * Interface for serialization converters.
-     */
+    /** Interface for serialization converters. */
     public interface SerializationConverter {
         /**
          * Serializes a value from the given position in the RecordData.

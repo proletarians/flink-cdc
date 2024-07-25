@@ -124,16 +124,14 @@ public class Elasticsearch8AsyncWriter<InputT> extends AsyncSinkWriter<InputT, O
 
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Operation operation : requestEntries) {
-//            if (operation.getBulkOperationVariant() == null&&requestEntries.size()==1) {
-//                return; // 跳过当前循环迭代
-//            }
-            if(operation.getBulkOperationVariant() == null)
-            {
+            //            if (operation.getBulkOperationVariant() == null&&requestEntries.size()==1)
+            // {
+            //                return; // 跳过当前循环迭代
+            //            }
+            if (operation.getBulkOperationVariant() == null) {
                 continue;
             }
-                br.operations(new BulkOperation(operation.getBulkOperationVariant()));
-
-
+            br.operations(new BulkOperation(operation.getBulkOperationVariant()));
         }
 
         esClient.bulk(br.build())
