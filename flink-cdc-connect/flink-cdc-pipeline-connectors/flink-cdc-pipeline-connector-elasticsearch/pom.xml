@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>flink-cdc-pipeline-connectors</artifactId>
-        <version>3.2-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>flink-cdc-pipeline-connector-elasticsearch</artifactId>
@@ -24,6 +24,17 @@
         <jackson.version>2.13.2</jackson.version>
         <surefire.module.config>--add-opens=java.base/java.util=ALL-UNNAMED</surefire.module.config>
         <testcontainers.version>1.16.0</testcontainers.version>
+        <httpclient.version>4.5.13</httpclient.version>
+        <junit.jupiter.version>5.7.1</junit.jupiter.version>
+        <assertj.version>3.18.1</assertj.version>
+        <junit.version>4.13.2</junit.version>
+        <slf4j.version>1.7.32</slf4j.version>
+        <junit.platform.version>1.10.2</junit.platform.version>
+        <paimon.version>0.7.0-incubating</paimon.version>
+        <hadoop.version>2.8.5</hadoop.version>
+        <hive.version>2.3.9</hive.version>
+        <mockito.version>3.4.6</mockito.version>
+        <jakarta.json.version>2.0.2</jakarta.json.version>
     </properties>
 
     <dependencies>
@@ -60,7 +71,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5.13</version>
+            <version>${httpclient.version}</version>
         </dependency>
 
         <dependency>
@@ -108,32 +119,32 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.32</version>
+            <version>${slf4j.version}</version>
         </dependency>
 
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.7.1</version>
+            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.1</version>
+            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.18.1</version>
+            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -153,13 +164,13 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
-            <version>1.10.2</version>
+            <version>${junit.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-cdc-composer</artifactId>
-            <version>3.2-SNAPSHOT</version>
+            <version>${revision}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -169,7 +180,7 @@
             <dependency>
                 <groupId>jakarta.json</groupId>
                 <artifactId>jakarta.json-api</artifactId>
-                <version>2.0.2</version>
+                <version>${jakarta.json.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
