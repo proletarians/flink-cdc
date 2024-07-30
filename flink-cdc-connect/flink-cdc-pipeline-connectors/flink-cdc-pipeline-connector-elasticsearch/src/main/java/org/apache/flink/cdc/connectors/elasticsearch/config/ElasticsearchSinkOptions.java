@@ -24,7 +24,7 @@ import org.apache.http.HttpHost;
 import java.io.Serializable;
 import java.util.List;
 
-/** DorisDataSink Options reference {@link ElasticsearchSinkOptions}. */
+/** Elasticsearch DataSink Options reference {@link ElasticsearchSinkOptions}. */
 public class ElasticsearchSinkOptions implements Serializable {
 
     private final int maxBatchSize;
