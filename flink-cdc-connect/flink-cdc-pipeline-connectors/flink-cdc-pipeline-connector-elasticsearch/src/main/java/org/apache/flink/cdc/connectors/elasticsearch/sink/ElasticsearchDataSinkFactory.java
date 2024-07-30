@@ -67,8 +67,10 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
 
     private ElasticsearchSinkOptions buildSinkConnectorOptions(Configuration cdcConfig) {
         List<HttpHost> hosts = parseHosts(cdcConfig.get(HOSTS));
-        NetworkConfig networkConfig = new NetworkConfig(hosts, null, null, null, null, null);
-
+        String username = cdcConfig.get(USERNAME);
+        String password = cdcConfig.get(PASSWORD);
+        NetworkConfig networkConfig =
+                new NetworkConfig(hosts, username, password, null, null, null);
         return new ElasticsearchSinkOptions(
                 cdcConfig.get(MAX_BATCH_SIZE),
                 cdcConfig.get(MAX_IN_FLIGHT_REQUESTS),
