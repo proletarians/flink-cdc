@@ -18,9 +18,9 @@
 package org.apache.flink.cdc.connectors.elasticsearch.serializer;
 
 /**
- * Enumeration of column types supported in the Elasticsearch connector.
- * These types represent the various data types that can be used in database columns
- * and are relevant for serialization and deserialization processes.
+ * Enumeration of column types supported in the Elasticsearch connector. These types represent the
+ * various data types that can be used in database columns and are relevant for serialization and
+ * deserialization processes.
  */
 public enum ColumnType {
     BOOLEAN,

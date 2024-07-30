@@ -38,9 +38,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.flink.cdc.connectors.elasticsearch.sink.ElasticsearchDataSinkOptions.*;
 
-/**
- * Factory for creating {@link ElasticsearchDataSink}.
- */
+/** Factory for creating {@link ElasticsearchDataSink}. */
 public class ElasticsearchDataSinkFactory implements DataSinkFactory {
 
     public static final String IDENTIFIER = "elasticsearch";
@@ -58,7 +56,8 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
     }
 
     private ZoneId determineZoneId(Context context) {
-        String configuredZone = context.getPipelineConfiguration().get(PipelineOptions.PIPELINE_LOCAL_TIME_ZONE);
+        String configuredZone =
+                context.getPipelineConfiguration().get(PipelineOptions.PIPELINE_LOCAL_TIME_ZONE);
         String defaultZone = PipelineOptions.PIPELINE_LOCAL_TIME_ZONE.defaultValue();
 
         return Objects.equals(configuredZone, defaultZone)
