@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.cdc.common.types.DataTypeChecks.*;
+
 /** A serializer for Event to BulkOperationVariant. */
 public class ElasticsearchEventSerializer implements ElementConverter<Event, BulkOperationVariant> {
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -199,6 +201,23 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             case CHAR:
             case VARCHAR:
                 return recordData.getString(index);
+            case DECIMAL:
+                return recordData.getDecimal(index, getPrecision(dataType), getScale(dataType));
+            case TIMESTAMP_WITHOUT_TIME_ZONE:
+                return recordData.getTimestamp(index, getPrecision(dataType));
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                return recordData.getLocalZonedTimestampData(index, getPrecision(dataType));
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return recordData.getZonedTimestamp(index, getPrecision(dataType));
+            case BINARY:
+            case VARBINARY:
+                return recordData.getBinary(index);
+            case ARRAY:
+                return recordData.getArray(index);
+            case MAP:
+                return recordData.getMap(index);
+            case ROW:
+                return recordData.getRow(index, getFieldCount(dataType));
             default:
                 throw new IllegalArgumentException("Unsupported type: " + dataType);
         }

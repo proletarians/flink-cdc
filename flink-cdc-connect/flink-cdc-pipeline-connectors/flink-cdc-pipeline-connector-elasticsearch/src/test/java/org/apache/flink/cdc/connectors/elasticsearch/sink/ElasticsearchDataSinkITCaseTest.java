@@ -20,6 +20,8 @@ package org.apache.flink.cdc.connectors.elasticsearch.sink;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.cdc.common.data.DecimalData;
+import org.apache.flink.cdc.common.data.TimestampData;
 import org.apache.flink.cdc.common.data.binary.BinaryRecordData;
 import org.apache.flink.cdc.common.data.binary.BinaryStringData;
 import org.apache.flink.cdc.common.event.*;
@@ -52,8 +54,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -99,7 +105,32 @@ public class ElasticsearchDataSinkITCaseTest {
 
         runJobWithEvents(events);
 
-        verifyInsertedData(tableId, "2", 2, 2.0, "value2");
+        verifyInsertedData(
+                tableId,
+                "1",
+                1,
+                1.0,
+                "value1",
+                true,
+                (byte) 1,
+                (short) 2,
+                100L,
+                1.0f,
+                new BigDecimal("10.00"),
+                1633024800000L);
+        verifyInsertedData(
+                tableId,
+                "2",
+                2,
+                2.0,
+                "value2",
+                false,
+                (byte) 2,
+                (short) 3,
+                200L,
+                2.0f,
+                new BigDecimal("20.00"),
+                1633111200000L);
     }
 
     @Test
@@ -184,15 +215,45 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private void verifyInsertedData(
-            TableId tableId, String id, int expectedId, double expectedNumber, String expectedName)
+            TableId tableId,
+            String id,
+            int expectedId,
+            double expectedNumber,
+            String expectedName,
+            boolean expectedBool,
+            byte expectedTinyint,
+            short expectedSmallint,
+            long expectedBigint,
+            float expectedFloat,
+            BigDecimal expectedDecimal,
+            long expectedTimestamp)
             throws Exception {
         GetRequest getRequest = new GetRequest.Builder().index(tableId.toString()).id(id).build();
         GetResponse<Map> response = client.get(getRequest, Map.class);
 
+        LOG.debug("Response source: {}", response.source());
+
         assertThat(response.source()).isNotNull();
-        assertThat(response.source().get("id")).isEqualTo(expectedId);
-        assertThat(response.source().get("number")).isEqualTo(expectedNumber);
+        assertThat(((Number) response.source().get("id")).intValue()).isEqualTo(expectedId);
+        assertThat(((Number) response.source().get("number")).doubleValue())
+                .isEqualTo(expectedNumber);
         assertThat(response.source().get("name")).isEqualTo(expectedName);
+        assertThat(response.source().get("bool")).isEqualTo(expectedBool);
+        assertThat(((Number) response.source().get("tinyint")).byteValue())
+                .isEqualTo(expectedTinyint);
+        assertThat(((Number) response.source().get("smallint")).shortValue())
+                .isEqualTo(expectedSmallint);
+        assertThat(((Number) response.source().get("bigint")).longValue())
+                .isEqualTo(expectedBigint);
+        assertThat(((Number) response.source().get("float")).floatValue()).isEqualTo(expectedFloat);
+        assertThat(new BigDecimal(response.source().get("decimal").toString()))
+                .isEqualTo(expectedDecimal);
+
+        String timestampString = response.source().get("timestamp").toString();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+        LocalDateTime dateTime = LocalDateTime.parse(timestampString, formatter);
+        long timestampMillis = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+        assertThat(timestampMillis).isEqualTo(expectedTimestamp);
     }
 
     private void verifyDeletedData(TableId tableId, String id) throws Exception {
@@ -226,6 +287,13 @@ public class ElasticsearchDataSinkITCaseTest {
                         .column(new PhysicalColumn("id", DataTypes.INT().notNull(), null))
                         .column(new PhysicalColumn("number", DataTypes.DOUBLE(), null))
                         .column(new PhysicalColumn("name", DataTypes.VARCHAR(17), null))
+                        .column(new PhysicalColumn("bool", DataTypes.BOOLEAN(), null))
+                        .column(new PhysicalColumn("tinyint", DataTypes.TINYINT(), null))
+                        .column(new PhysicalColumn("smallint", DataTypes.SMALLINT(), null))
+                        .column(new PhysicalColumn("bigint", DataTypes.BIGINT(), null))
+                        .column(new PhysicalColumn("float", DataTypes.FLOAT(), null))
+                        .column(new PhysicalColumn("decimal", DataTypes.DECIMAL(10, 2), null))
+                        .column(new PhysicalColumn("timestamp", DataTypes.TIMESTAMP(), null))
                         .primaryKey("id")
                         .build();
 
@@ -234,18 +302,47 @@ public class ElasticsearchDataSinkITCaseTest {
                         org.apache.flink.cdc.common.types.RowType.of(
                                 org.apache.flink.cdc.common.types.DataTypes.INT(),
                                 org.apache.flink.cdc.common.types.DataTypes.DOUBLE(),
-                                org.apache.flink.cdc.common.types.DataTypes.STRING()));
+                                org.apache.flink.cdc.common.types.DataTypes.STRING(),
+                                org.apache.flink.cdc.common.types.DataTypes.BOOLEAN(),
+                                org.apache.flink.cdc.common.types.DataTypes.TINYINT(),
+                                org.apache.flink.cdc.common.types.DataTypes.SMALLINT(),
+                                org.apache.flink.cdc.common.types.DataTypes.BIGINT(),
+                                org.apache.flink.cdc.common.types.DataTypes.FLOAT(),
+                                org.apache.flink.cdc.common.types.DataTypes.DECIMAL(10, 2),
+                                org.apache.flink.cdc.common.types.DataTypes.TIMESTAMP()));
 
         return Arrays.asList(
                 new CreateTableEvent(tableId, schema),
                 DataChangeEvent.insertEvent(
                         tableId,
                         generator.generate(
-                                new Object[] {1, 1.0, BinaryStringData.fromString("value1")})),
+                                new Object[] {
+                                    1,
+                                    1.0,
+                                    BinaryStringData.fromString("value1"),
+                                    true,
+                                    (byte) 1,
+                                    (short) 2,
+                                    100L,
+                                    1.0f,
+                                    DecimalData.fromBigDecimal(new BigDecimal("10.00"), 10, 2),
+                                    TimestampData.fromMillis(1633024800000L)
+                                })),
                 DataChangeEvent.insertEvent(
                         tableId,
                         generator.generate(
-                                new Object[] {2, 2.0, BinaryStringData.fromString("value2")})));
+                                new Object[] {
+                                    2,
+                                    2.0,
+                                    BinaryStringData.fromString("value2"),
+                                    false,
+                                    (byte) 2,
+                                    (short) 3,
+                                    200L,
+                                    2.0f,
+                                    DecimalData.fromBigDecimal(new BigDecimal("20.00"), 10, 2),
+                                    TimestampData.fromMillis(1633111200000L)
+                                })));
     }
 
     private List<Event> createTestEventsWithDelete(TableId tableId) {
