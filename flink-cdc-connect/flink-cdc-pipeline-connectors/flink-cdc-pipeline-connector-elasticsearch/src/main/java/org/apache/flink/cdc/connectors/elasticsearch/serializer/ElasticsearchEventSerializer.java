@@ -37,10 +37,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.cdc.common.types.DataTypeChecks.*;
@@ -49,6 +47,8 @@ import static org.apache.flink.cdc.common.types.DataTypeChecks.*;
 public class ElasticsearchEventSerializer implements ElementConverter<Event, BulkOperationVariant> {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<TableId, Schema> schemaMaps = new HashMap<>();
+    private final ConcurrentHashMap<TableId, List<ElasticsearchRowConverter.SerializationConverter>>
+            converterCache = new ConcurrentHashMap<>();
 
     /** Format DATE type data. */
     public static final DateTimeFormatter DATE_FORMATTER =
@@ -147,7 +147,7 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             case INSERT:
             case REPLACE:
             case UPDATE:
-                valueMap = serializeRecord(event.after(), schema, pipelineZoneId);
+                valueMap = serializeRecord(tableId, event.after(), schema, pipelineZoneId);
                 return new IndexOperation.Builder<>()
                         .index(tableId.toString())
                         .id(id)
@@ -224,24 +224,41 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
     }
 
     public Map<String, Object> serializeRecord(
-            RecordData recordData, Schema schema, ZoneId pipelineZoneId) {
+            TableId tableId, RecordData recordData, Schema schema, ZoneId pipelineZoneId) {
         List<Column> columns = schema.getColumns();
         Map<String, Object> record = new HashMap<>();
         Preconditions.checkState(
                 columns.size() == recordData.getArity(),
                 "Column size does not match the data size.");
 
+        List<ElasticsearchRowConverter.SerializationConverter> converters =
+                getOrCreateConverters(tableId, schema);
+
         for (int i = 0; i < recordData.getArity(); i++) {
             Column column = columns.get(i);
-            ColumnType columnType = ColumnType.valueOf(column.getType().getTypeRoot().name());
-            ElasticsearchRowConverter.SerializationConverter converter =
-                    ElasticsearchRowConverter.createNullableExternalConverter(
-                            columnType, pipelineZoneId);
-            Object field = converter.serialize(i, recordData);
+            Object field = converters.get(i).serialize(i, recordData);
             record.put(column.getName(), field);
         }
 
         return record;
+    }
+
+    private List<ElasticsearchRowConverter.SerializationConverter> getOrCreateConverters(
+            TableId tableId, Schema schema) {
+        return converterCache.computeIfAbsent(
+                tableId,
+                id -> {
+                    List<ElasticsearchRowConverter.SerializationConverter> converters =
+                            new ArrayList<>();
+                    for (Column column : schema.getColumns()) {
+                        ColumnType columnType =
+                                ColumnType.valueOf(column.getType().getTypeRoot().name());
+                        converters.add(
+                                ElasticsearchRowConverter.createNullableExternalConverter(
+                                        columnType, pipelineZoneId));
+                    }
+                    return converters;
+                });
     }
 
     @Override
