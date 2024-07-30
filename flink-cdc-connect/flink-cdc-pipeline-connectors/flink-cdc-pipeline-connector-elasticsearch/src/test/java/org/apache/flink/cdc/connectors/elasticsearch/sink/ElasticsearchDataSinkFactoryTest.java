@@ -98,10 +98,7 @@ public class ElasticsearchDataSinkFactoryTest {
                                 + "unsupported_key");
     }
 
-    /**
-     * Tests the creation of an Elasticsearch DataSink with valid configuration using prefixed
-     * options.
-     */
+    /** Tests the creation of an Elasticsearch DataSink with valid configuration using prefixed options. */
     @Test
     void testPrefixedRequiredOption() {
         DataSinkFactory sinkFactory = getElasticsearchDataSinkFactory();
@@ -109,16 +106,15 @@ public class ElasticsearchDataSinkFactoryTest {
         Configuration conf =
                 Configuration.fromMap(
                         ImmutableMap.<String, String>builder()
-                                .put("sink.hosts", "localhost:9200")
-                                .put("sink.index", "test-index")
-                                .put("sink.batch.size.max", "500")
-                                .put("sink.inflight.requests.max", "5")
+                                .put("hosts", "localhost:9200")
+                                .put("index", "test-index")
+                                .put("batch.size.max", "500")
+                                .put("inflight.requests.max", "5")
                                 .build());
 
         DataSink dataSink = createDataSink(sinkFactory, conf);
         Assertions.assertThat(dataSink).isInstanceOf(ElasticsearchDataSink.class);
     }
-
     // Helper methods
 
     private DataSinkFactory getElasticsearchDataSinkFactory() {
