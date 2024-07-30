@@ -84,12 +84,14 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
     private IndexOperation<Map<String, Object>> applySchemaChangeEvent(
             SchemaChangeEvent schemaChangeEvent) throws IOException {
         TableId tableId = schemaChangeEvent.tableId();
+
         if (schemaChangeEvent instanceof CreateTableEvent) {
             Schema schema = ((CreateTableEvent) schemaChangeEvent).getSchema();
             schemaMaps.put(tableId, schema);
             return createSchemaIndexOperation(tableId, schema);
         } else if (schemaChangeEvent instanceof AddColumnEvent
-                || schemaChangeEvent instanceof DropColumnEvent) {
+                || schemaChangeEvent instanceof DropColumnEvent
+                || schemaChangeEvent instanceof RenameColumnEvent) {
             if (!schemaMaps.containsKey(tableId)) {
                 throw new RuntimeException("Schema of " + tableId + " does not exist.");
             }

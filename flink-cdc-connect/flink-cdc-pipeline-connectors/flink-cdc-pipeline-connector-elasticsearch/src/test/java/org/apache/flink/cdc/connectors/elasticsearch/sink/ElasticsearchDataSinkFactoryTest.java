@@ -98,7 +98,10 @@ public class ElasticsearchDataSinkFactoryTest {
                                 + "unsupported_key");
     }
 
-    /** Tests the creation of an Elasticsearch DataSink with valid configuration using prefixed options. */
+    /**
+     * Tests the creation of an Elasticsearch DataSink with valid configuration using prefixed
+     * options.
+     */
     @Test
     void testPrefixedRequiredOption() {
         DataSinkFactory sinkFactory = getElasticsearchDataSinkFactory();
