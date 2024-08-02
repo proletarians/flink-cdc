@@ -74,7 +74,6 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             schemaMaps.put(tableId, schema);
             // 缓存新的转换器
             getOrCreateConverters(tableId, schema);
-            return createSchemaIndexOperation(tableId, schema);
         } else if (schemaChangeEvent instanceof AddColumnEvent
                 || schemaChangeEvent instanceof DropColumnEvent
                 || schemaChangeEvent instanceof RenameColumnEvent) {
@@ -86,7 +85,6 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             schemaMaps.put(tableId, updatedSchema);
             // 更新缓存的转换器
             getOrCreateConverters(tableId, updatedSchema);
-            return createSchemaIndexOperation(tableId, updatedSchema);
         } else {
             if (!schemaMaps.containsKey(tableId)) {
                 throw new RuntimeException("Schema of " + tableId + " does not exist.");
@@ -98,23 +96,6 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             getOrCreateConverters(tableId, updatedSchema);
         }
         return null;
-    }
-
-    private IndexOperation<Map<String, Object>> createSchemaIndexOperation(
-            TableId tableId, Schema schema) {
-        Map<String, Object> schemaMap = new HashMap<>();
-        schemaMap.put(
-                "columns",
-                schema.getColumns().stream()
-                        .map(Column::asSummaryString)
-                        .collect(Collectors.toList()));
-        schemaMap.put("primaryKeys", schema.primaryKeys());
-        schemaMap.put("options", schema.options());
-        return new IndexOperation.Builder<Map<String, Object>>()
-                .index(tableId.toString())
-                .id(tableId.getTableName())
-                .document(schemaMap)
-                .build();
     }
 
     private BulkOperationVariant createBulkOperationVariant(DataChangeEvent event)
