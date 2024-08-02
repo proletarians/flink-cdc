@@ -77,6 +77,13 @@ public class ElasticsearchDataSinkOptions {
                     .defaultValue(10L * 1024L * 1024L)
                     .withDescription("The maximum size of a single record in bytes.");
 
+    /** The version of Elasticsearch to connect to. */
+    public static final ConfigOption<Integer> VERSION =
+            ConfigOptions.key("version")
+                    .intType()
+                    .defaultValue(7)
+                    .withDescription("The version of Elasticsearch to connect to (6, 7, or 8).");
+
     /** The Elasticsearch index name to write to. */
     public static final ConfigOption<String> INDEX =
             ConfigOptions.key("index")

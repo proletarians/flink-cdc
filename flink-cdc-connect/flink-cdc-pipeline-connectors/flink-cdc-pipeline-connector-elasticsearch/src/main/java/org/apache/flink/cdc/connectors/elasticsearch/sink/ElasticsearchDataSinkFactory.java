@@ -69,6 +69,7 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
         List<HttpHost> hosts = parseHosts(cdcConfig.get(HOSTS));
         String username = cdcConfig.get(USERNAME);
         String password = cdcConfig.get(PASSWORD);
+        int version = cdcConfig.get(VERSION); // 新增：获取 Elasticsearch 版本
         NetworkConfig networkConfig =
                 new NetworkConfig(hosts, username, password, null, null, null);
         return new ElasticsearchSinkOptions(
@@ -78,7 +79,10 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
                 cdcConfig.get(MAX_BATCH_SIZE_IN_BYTES),
                 cdcConfig.get(MAX_TIME_IN_BUFFER_MS),
                 cdcConfig.get(MAX_RECORD_SIZE_IN_BYTES),
-                networkConfig);
+                networkConfig,
+                version, // 新增：传入 Elasticsearch 版本
+                username,
+                password);
     }
 
     private List<HttpHost> parseHosts(String hostsStr) {
@@ -97,6 +101,7 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
         Set<ConfigOption<?>> requiredOptions = new HashSet<>();
         requiredOptions.add(HOSTS);
         requiredOptions.add(INDEX);
+        requiredOptions.add(VERSION); // 新增：将 VERSION 添加为必需选项
         return requiredOptions;
     }
 

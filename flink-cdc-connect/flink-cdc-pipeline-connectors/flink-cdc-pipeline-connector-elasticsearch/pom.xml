@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <elasticsearch.version>8.12.1</elasticsearch.version>
         <flink.version>1.18.0</flink.version>
-        <scala.binary.version>2.12</scala.binary.version>
+        <scala.binary.version>4.0</scala.binary.version>
         <jackson.version>2.13.2</jackson.version>
         <surefire.module.config>--add-opens=java.base/java.util=ALL-UNNAMED</surefire.module.config>
         <testcontainers.version>1.16.0</testcontainers.version>
@@ -108,11 +108,30 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Elasticsearch Clients -->
+        <!-- Elasticsearch 6 -->
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
+            <version>8.12.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-sql-connector-elasticsearch6</artifactId>
+            <version>4.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Elasticsearch 7 Connector -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-sql-connector-elasticsearch7</artifactId>
+            <version>4.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Elasticsearch 8 Client -->
         <dependency>
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
-            <version>${elasticsearch.version}</version>
+            <version>8.12.1</version>
         </dependency>
 
         <!-- SLF4J API -->

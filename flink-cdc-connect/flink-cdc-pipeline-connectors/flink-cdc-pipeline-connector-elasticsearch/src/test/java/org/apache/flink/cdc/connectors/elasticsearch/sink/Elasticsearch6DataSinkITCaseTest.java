@@ -1,20 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.flink.cdc.connectors.elasticsearch.sink;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -32,16 +15,15 @@ import org.apache.flink.cdc.common.types.DataTypes;
 import org.apache.flink.cdc.connectors.elasticsearch.config.ElasticsearchSinkOptions;
 import org.apache.flink.cdc.connectors.elasticsearch.v2.NetworkConfig;
 import org.apache.flink.cdc.runtime.typeutils.BinaryRecordDataGenerator;
+import org.apache.flink.elasticsearch6.shaded.org.apache.http.HttpHost;
+import org.apache.flink.elasticsearch6.shaded.org.elasticsearch.action.get.GetRequest;
+import org.apache.flink.elasticsearch6.shaded.org.elasticsearch.action.get.GetResponse;
+import org.apache.flink.elasticsearch6.shaded.org.elasticsearch.client.RequestOptions;
+import org.apache.flink.elasticsearch6.shaded.org.elasticsearch.client.RestClient;
+import org.apache.flink.elasticsearch6.shaded.org.elasticsearch.client.RestHighLevelClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch.core.GetRequest;
-import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.rest_client.RestClientTransport;
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,13 +45,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ITCase tests for {@link ElasticsearchDataSink}. */
 @Testcontainers
-public class ElasticsearchDataSinkITCaseTest {
+public class Elasticsearch6DataSinkITCaseTest {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(ElasticsearchDataSinkITCaseTest.class);
@@ -84,7 +65,7 @@ public class ElasticsearchDataSinkITCaseTest {
     private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER =
             createElasticsearchContainer();
 
-    private ElasticsearchClient client;
+    private RestHighLevelClient client;
 
     @BeforeEach
     public void setUp() {
@@ -94,7 +75,7 @@ public class ElasticsearchDataSinkITCaseTest {
     @AfterEach
     public void tearDown() throws Exception {
         if (client != null) {
-            client.shutdown();
+            client.close();
         }
     }
 
@@ -163,17 +144,13 @@ public class ElasticsearchDataSinkITCaseTest {
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(5)));
     }
 
-    private ElasticsearchClient createElasticsearchClient() {
-        RestClientTransport transport =
-                new RestClientTransport(
-                        RestClient.builder(
-                                        new HttpHost(
-                                                ELASTICSEARCH_CONTAINER.getHost(),
-                                                ELASTICSEARCH_CONTAINER.getFirstMappedPort(),
-                                                "http"))
-                                .build(),
-                        new JacksonJsonpMapper());
-        return new ElasticsearchClient(transport);
+    private RestHighLevelClient createElasticsearchClient() {
+        return new RestHighLevelClient(
+                RestClient.builder(
+                        new HttpHost(
+                                ELASTICSEARCH_CONTAINER.getHost(),
+                                ELASTICSEARCH_CONTAINER.getFirstMappedPort(),
+                                "http")));
     }
 
     private void runJobWithEvents(List<Event> events) throws Exception {
@@ -190,10 +167,11 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private ElasticsearchSinkOptions createSinkOptions() {
+
         NetworkConfig networkConfig =
                 new NetworkConfig(
                         Collections.singletonList(
-                                new HttpHost(
+                                new org.apache.http.HttpHost(
                                         ELASTICSEARCH_CONTAINER.getHost(),
                                         ELASTICSEARCH_CONTAINER.getFirstMappedPort())),
                         null,
@@ -228,28 +206,30 @@ public class ElasticsearchDataSinkITCaseTest {
             BigDecimal expectedDecimal,
             long expectedTimestamp)
             throws Exception {
-        GetRequest getRequest = new GetRequest.Builder().index(tableId.toString()).id(id).build();
-        GetResponse<Map> response = client.get(getRequest, Map.class);
+        GetRequest getRequest = new GetRequest(tableId.toString()).id(id);
 
-        LOG.debug("Response source: {}", response.source());
+        GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
 
-        assertThat(response.source()).isNotNull();
-        assertThat(((Number) response.source().get("id")).intValue()).isEqualTo(expectedId);
-        assertThat(((Number) response.source().get("number")).doubleValue())
+        LOG.debug("Response source: {}", response.getSource());
+
+        assertThat(response.getSource()).isNotNull();
+        assertThat(((Number) response.getSource().get("id")).intValue()).isEqualTo(expectedId);
+        assertThat(((Number) response.getSource().get("number")).doubleValue())
                 .isEqualTo(expectedNumber);
-        assertThat(response.source().get("name")).isEqualTo(expectedName);
-        assertThat(response.source().get("bool")).isEqualTo(expectedBool);
-        assertThat(((Number) response.source().get("tinyint")).byteValue())
+        assertThat(response.getSource().get("name")).isEqualTo(expectedName);
+        assertThat(response.getSource().get("bool")).isEqualTo(expectedBool);
+        assertThat(((Number) response.getSource().get("tinyint")).byteValue())
                 .isEqualTo(expectedTinyint);
-        assertThat(((Number) response.source().get("smallint")).shortValue())
+        assertThat(((Number) response.getSource().get("smallint")).shortValue())
                 .isEqualTo(expectedSmallint);
-        assertThat(((Number) response.source().get("bigint")).longValue())
+        assertThat(((Number) response.getSource().get("bigint")).longValue())
                 .isEqualTo(expectedBigint);
-        assertThat(((Number) response.source().get("float")).floatValue()).isEqualTo(expectedFloat);
-        assertThat(new BigDecimal(response.source().get("decimal").toString()))
+        assertThat(((Number) response.getSource().get("float")).floatValue())
+                .isEqualTo(expectedFloat);
+        assertThat(new BigDecimal(response.getSource().get("decimal").toString()))
                 .isEqualTo(expectedDecimal);
 
-        String timestampString = response.source().get("timestamp").toString();
+        String timestampString = response.getSource().get("timestamp").toString();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
         LocalDateTime dateTime = LocalDateTime.parse(timestampString, formatter);
         long timestampMillis = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
@@ -257,10 +237,10 @@ public class ElasticsearchDataSinkITCaseTest {
     }
 
     private void verifyDeletedData(TableId tableId, String id) throws Exception {
-        GetRequest getRequest = new GetRequest.Builder().index(tableId.toString()).id(id).build();
-        GetResponse<Map> response = client.get(getRequest, Map.class);
+        GetRequest getRequest = new GetRequest(tableId.toString()).id(id);
+        GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
 
-        assertThat(response.source()).isNull();
+        assertThat(response.isExists()).isFalse();
     }
 
     private void verifyInsertedDataWithNewColumn(
@@ -271,14 +251,14 @@ public class ElasticsearchDataSinkITCaseTest {
             String expectedName,
             boolean expectedExtraBool)
             throws Exception {
-        GetRequest getRequest = new GetRequest.Builder().index(tableId.toString()).id(id).build();
-        GetResponse<Map> response = client.get(getRequest, Map.class);
+        GetRequest getRequest = new GetRequest(tableId.toString()).id(id);
+        GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
 
-        assertThat(response.source()).isNotNull();
-        assertThat(response.source().get("id")).isEqualTo(expectedId);
-        assertThat(response.source().get("number")).isEqualTo(expectedNumber);
-        assertThat(response.source().get("name")).isEqualTo(expectedName);
-        assertThat(response.source().get("extra_bool")).isEqualTo(expectedExtraBool);
+        assertThat(response.getSource()).isNotNull();
+        assertThat(response.getSource().get("id")).isEqualTo(expectedId);
+        assertThat(response.getSource().get("number")).isEqualTo(expectedNumber);
+        assertThat(response.getSource().get("name")).isEqualTo(expectedName);
+        assertThat(response.getSource().get("extra_bool")).isEqualTo(expectedExtraBool);
     }
 
     private List<Event> createTestEvents(TableId tableId) {
