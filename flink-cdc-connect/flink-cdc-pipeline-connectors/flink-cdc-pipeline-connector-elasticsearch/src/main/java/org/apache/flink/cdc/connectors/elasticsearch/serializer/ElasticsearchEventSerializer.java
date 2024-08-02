@@ -187,7 +187,7 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
                                 ColumnType.valueOf(column.getType().getTypeRoot().name());
                         converters.add(
                                 ElasticsearchRowConverter.createNullableExternalConverter(
-                                        columnType, pipelineZoneId));
+                                        column.getType(), pipelineZoneId));
                     }
                     return converters;
                 });
