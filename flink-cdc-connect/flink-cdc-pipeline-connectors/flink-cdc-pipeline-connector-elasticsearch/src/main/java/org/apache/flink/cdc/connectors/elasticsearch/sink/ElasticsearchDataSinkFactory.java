@@ -26,6 +26,7 @@ import org.apache.flink.cdc.common.sink.DataSink;
 import org.apache.flink.cdc.connectors.elasticsearch.config.ElasticsearchSinkOptions;
 import org.apache.flink.cdc.connectors.elasticsearch.v2.NetworkConfig;
 
+import org.apache.flink.table.api.ValidationException;
 import org.apache.http.HttpHost;
 
 import java.time.ZoneId;
@@ -45,12 +46,16 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
 
     @Override
     public DataSink createDataSink(Context context) {
+        // Validate the configuration
         FactoryHelper.createFactoryHelper(this, context).validate();
 
-        Configuration configuration =
-                Configuration.fromMap(context.getFactoryConfiguration().toMap());
-        ZoneId zoneId = determineZoneId(context);
+        // Get the configuration directly from the context
+        Configuration configuration = Configuration.fromMap(context.getFactoryConfiguration().toMap());
 
+        // Validate required options
+        validateRequiredOptions(configuration);
+
+        ZoneId zoneId = determineZoneId(context);
         ElasticsearchSinkOptions sinkOptions = buildSinkConnectorOptions(configuration);
         return new ElasticsearchDataSink(sinkOptions, zoneId);
     }
@@ -69,7 +74,7 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
         List<HttpHost> hosts = parseHosts(cdcConfig.get(HOSTS));
         String username = cdcConfig.get(USERNAME);
         String password = cdcConfig.get(PASSWORD);
-        int version = cdcConfig.get(VERSION); // 新增：获取 Elasticsearch 版本
+        int version = cdcConfig.get(VERSION);
         NetworkConfig networkConfig =
                 new NetworkConfig(hosts, username, password, null, null, null);
         return new ElasticsearchSinkOptions(
@@ -80,7 +85,7 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
                 cdcConfig.get(MAX_TIME_IN_BUFFER_MS),
                 cdcConfig.get(MAX_RECORD_SIZE_IN_BYTES),
                 networkConfig,
-                version, // 新增：传入 Elasticsearch 版本
+                version,
                 username,
                 password);
     }
@@ -100,8 +105,7 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
     public Set<ConfigOption<?>> requiredOptions() {
         Set<ConfigOption<?>> requiredOptions = new HashSet<>();
         requiredOptions.add(HOSTS);
-        requiredOptions.add(INDEX);
-        requiredOptions.add(VERSION); // 新增：将 VERSION 添加为必需选项
+        requiredOptions.add(VERSION);
         return requiredOptions;
     }
 
@@ -118,4 +122,28 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
         optionalOptions.add(PASSWORD);
         return optionalOptions;
     }
+
+    private void validateRequiredOptions(Configuration configuration) {
+        Set<ConfigOption<?>> missingOptions = new HashSet<>();
+        for (ConfigOption<?> option : requiredOptions()) {
+            if (!configuration.contains(option)) {
+                missingOptions.add(option);
+            }
+        }
+        if (!missingOptions.isEmpty()) {
+            throw new ValidationException(
+                    String.format(
+                            "One or more required options are missing.\n\n" +
+                                    "Missing required options are:\n\n" +
+                                    "%s",
+                            missingOptions.stream()
+                                    .map(ConfigOption::key)
+                                    .collect(Collectors.joining("\n"))
+                    )
+            );
+        }
+    }
+
+
+
 }

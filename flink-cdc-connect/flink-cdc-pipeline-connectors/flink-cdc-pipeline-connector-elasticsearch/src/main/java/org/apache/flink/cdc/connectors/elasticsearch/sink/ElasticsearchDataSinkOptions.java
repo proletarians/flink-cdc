@@ -84,13 +84,6 @@ public class ElasticsearchDataSinkOptions {
                     .defaultValue(7)
                     .withDescription("The version of Elasticsearch to connect to (6, 7, or 8).");
 
-    /** The Elasticsearch index name to write to. */
-    public static final ConfigOption<String> INDEX =
-            ConfigOptions.key("index")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The Elasticsearch index name to write to.");
-
     /** The username for Elasticsearch authentication. */
     public static final ConfigOption<String> USERNAME =
             ConfigOptions.key("username")
