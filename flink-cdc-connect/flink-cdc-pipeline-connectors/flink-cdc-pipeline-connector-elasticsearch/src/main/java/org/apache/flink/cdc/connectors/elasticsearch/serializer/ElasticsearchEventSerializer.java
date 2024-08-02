@@ -69,7 +69,7 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
     public BulkOperationVariant apply(Event event, SinkWriter.Context context) {
         try {
             if (event instanceof DataChangeEvent) {
-                return applyDataChangeEvent((DataChangeEvent) event);
+                return createBulkOperationVariant((DataChangeEvent) event);
             } else if (event instanceof SchemaChangeEvent) {
                 IndexOperation<Map<String, Object>> indexOperation =
                         applySchemaChangeEvent((SchemaChangeEvent) event);
@@ -130,7 +130,7 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
                 .build();
     }
 
-    private BulkOperationVariant applyDataChangeEvent(DataChangeEvent event)
+    private BulkOperationVariant createBulkOperationVariant(DataChangeEvent event)
             throws JsonProcessingException {
         TableId tableId = event.tableId();
         Schema schema = schemaMaps.get(tableId);
