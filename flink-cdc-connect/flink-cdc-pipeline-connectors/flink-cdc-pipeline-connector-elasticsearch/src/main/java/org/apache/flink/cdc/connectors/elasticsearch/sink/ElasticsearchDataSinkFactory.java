@@ -25,8 +25,8 @@ import org.apache.flink.cdc.common.pipeline.PipelineOptions;
 import org.apache.flink.cdc.common.sink.DataSink;
 import org.apache.flink.cdc.connectors.elasticsearch.config.ElasticsearchSinkOptions;
 import org.apache.flink.cdc.connectors.elasticsearch.v2.NetworkConfig;
-
 import org.apache.flink.table.api.ValidationException;
+
 import org.apache.http.HttpHost;
 
 import java.time.ZoneId;
@@ -50,7 +50,8 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
         FactoryHelper.createFactoryHelper(this, context).validate();
 
         // Get the configuration directly from the context
-        Configuration configuration = Configuration.fromMap(context.getFactoryConfiguration().toMap());
+        Configuration configuration =
+                Configuration.fromMap(context.getFactoryConfiguration().toMap());
 
         // Validate required options
         validateRequiredOptions(configuration);
@@ -133,17 +134,12 @@ public class ElasticsearchDataSinkFactory implements DataSinkFactory {
         if (!missingOptions.isEmpty()) {
             throw new ValidationException(
                     String.format(
-                            "One or more required options are missing.\n\n" +
-                                    "Missing required options are:\n\n" +
-                                    "%s",
+                            "One or more required options are missing.\n\n"
+                                    + "Missing required options are:\n\n"
+                                    + "%s",
                             missingOptions.stream()
                                     .map(ConfigOption::key)
-                                    .collect(Collectors.joining("\n"))
-                    )
-            );
+                                    .collect(Collectors.joining("\n"))));
         }
     }
-
-
-
 }

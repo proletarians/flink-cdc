@@ -1,20 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.flink.cdc.connectors.elasticsearch.serializer;
 
 import org.apache.flink.api.connector.sink2.Sink;
@@ -86,10 +69,11 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
     private IndexOperation<Map<String, Object>> applySchemaChangeEvent(
             SchemaChangeEvent schemaChangeEvent) throws IOException {
         TableId tableId = schemaChangeEvent.tableId();
-
         if (schemaChangeEvent instanceof CreateTableEvent) {
             Schema schema = ((CreateTableEvent) schemaChangeEvent).getSchema();
             schemaMaps.put(tableId, schema);
+            // 缓存新的转换器
+            getOrCreateConverters(tableId, schema);
             return createSchemaIndexOperation(tableId, schema);
         } else if (schemaChangeEvent instanceof AddColumnEvent
                 || schemaChangeEvent instanceof DropColumnEvent
@@ -100,6 +84,8 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             Schema updatedSchema =
                     SchemaUtils.applySchemaChangeEvent(schemaMaps.get(tableId), schemaChangeEvent);
             schemaMaps.put(tableId, updatedSchema);
+            // 更新缓存的转换器
+            getOrCreateConverters(tableId, updatedSchema);
             return createSchemaIndexOperation(tableId, updatedSchema);
         } else {
             if (!schemaMaps.containsKey(tableId)) {
@@ -108,6 +94,8 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             Schema updatedSchema =
                     SchemaUtils.applySchemaChangeEvent(schemaMaps.get(tableId), schemaChangeEvent);
             schemaMaps.put(tableId, updatedSchema);
+            // 更新缓存的转换器
+            getOrCreateConverters(tableId, updatedSchema);
         }
         return null;
     }
@@ -122,7 +110,6 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
                         .collect(Collectors.toList()));
         schemaMap.put("primaryKeys", schema.primaryKeys());
         schemaMap.put("options", schema.options());
-
         return new IndexOperation.Builder<Map<String, Object>>()
                 .index(tableId.toString())
                 .id(tableId.getTableName())
@@ -134,15 +121,17 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
             throws JsonProcessingException {
         TableId tableId = event.tableId();
         Schema schema = schemaMaps.get(tableId);
-        Preconditions.checkNotNull(schema, event.tableId() + " does not exist.");
+        Preconditions.checkNotNull(schema, event.tableId() + " does not exist。");
+        // 确保转换器已缓存
+        getOrCreateConverters(tableId, schema);
         Map<String, Object> valueMap;
         OperationType op = event.op();
-
         Object[] uniqueId =
                 generateUniqueId(
-                        op == OperationType.DELETE ? event.before() : event.after(), schema);
+                        op == OperationType.DELETE ? event.before() : event.after(),
+                        schema,
+                        tableId);
         String id = Arrays.stream(uniqueId).map(Object::toString).collect(Collectors.joining("_"));
-
         switch (op) {
             case INSERT:
             case REPLACE:
@@ -160,8 +149,12 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
         }
     }
 
-    private Object[] generateUniqueId(RecordData recordData, Schema schema) {
+    private Object[] generateUniqueId(RecordData recordData, Schema schema, TableId tableId) {
         List<String> primaryKeys = schema.primaryKeys();
+        List<ElasticsearchRowConverter.SerializationConverter> converters =
+                converterCache.get(tableId);
+        Preconditions.checkNotNull(converters, "No converters found for table: " + tableId);
+
         return primaryKeys.stream()
                 .map(
                         primaryKey -> {
@@ -175,52 +168,11 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
                                                                     "Primary key column not found: "
                                                                             + primaryKey));
                             int index = schema.getColumns().indexOf(column);
-                            return getFieldValue(recordData, column.getType(), index);
+                            // 手动进行索引检查
+                            checkIndex(index, converters.size());
+                            return converters.get(index).serialize(index, recordData);
                         })
                 .toArray();
-    }
-
-    private Object getFieldValue(RecordData recordData, DataType dataType, int index) {
-        switch (dataType.getTypeRoot()) {
-            case BOOLEAN:
-                return recordData.getBoolean(index);
-            case TINYINT:
-                return recordData.getByte(index);
-            case SMALLINT:
-                return recordData.getShort(index);
-            case INTEGER:
-            case DATE:
-            case TIME_WITHOUT_TIME_ZONE:
-                return recordData.getInt(index);
-            case BIGINT:
-                return recordData.getLong(index);
-            case FLOAT:
-                return recordData.getFloat(index);
-            case DOUBLE:
-                return recordData.getDouble(index);
-            case CHAR:
-            case VARCHAR:
-                return recordData.getString(index);
-            case DECIMAL:
-                return recordData.getDecimal(index, getPrecision(dataType), getScale(dataType));
-            case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return recordData.getTimestamp(index, getPrecision(dataType));
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                return recordData.getLocalZonedTimestampData(index, getPrecision(dataType));
-            case TIMESTAMP_WITH_TIME_ZONE:
-                return recordData.getZonedTimestamp(index, getPrecision(dataType));
-            case BINARY:
-            case VARBINARY:
-                return recordData.getBinary(index);
-            case ARRAY:
-                return recordData.getArray(index);
-            case MAP:
-                return recordData.getMap(index);
-            case ROW:
-                return recordData.getRow(index, getFieldCount(dataType));
-            default:
-                throw new IllegalArgumentException("Unsupported type: " + dataType);
-        }
     }
 
     public Map<String, Object> serializeRecord(
@@ -230,24 +182,23 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
         Preconditions.checkState(
                 columns.size() == recordData.getArity(),
                 "Column size does not match the data size.");
-
         List<ElasticsearchRowConverter.SerializationConverter> converters =
                 getOrCreateConverters(tableId, schema);
-
         for (int i = 0; i < recordData.getArity(); i++) {
             Column column = columns.get(i);
+            // 手动进行索引检查
+            checkIndex(i, converters.size());
             Object field = converters.get(i).serialize(i, recordData);
             record.put(column.getName(), field);
         }
-
         return record;
     }
 
     private List<ElasticsearchRowConverter.SerializationConverter> getOrCreateConverters(
             TableId tableId, Schema schema) {
-        return converterCache.computeIfAbsent(
+        return converterCache.compute(
                 tableId,
-                id -> {
+                (id, existingConverters) -> {
                     List<ElasticsearchRowConverter.SerializationConverter> converters =
                             new ArrayList<>();
                     for (Column column : schema.getColumns()) {
@@ -259,6 +210,12 @@ public class ElasticsearchEventSerializer implements ElementConverter<Event, Bul
                     }
                     return converters;
                 });
+    }
+
+    private void checkIndex(int index, int size) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
+        }
     }
 
     @Override
