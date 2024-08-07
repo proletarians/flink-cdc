@@ -29,7 +29,6 @@ import org.apache.flink.cdc.connectors.elasticsearch.serializer.Elasticsearch6Re
 import org.apache.flink.cdc.connectors.elasticsearch.serializer.ElasticsearchEventSerializer;
 import org.apache.flink.cdc.connectors.elasticsearch.v2.Elasticsearch8AsyncSinkBuilder;
 import org.apache.flink.connector.elasticsearch.sink.Elasticsearch6SinkBuilder;
-import org.apache.flink.connector.elasticsearch.sink.Elasticsearch7SinkBuilder;
 
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperationVariant;
 import co.elastic.clients.elasticsearch.core.bulk.DeleteOperation;
@@ -96,7 +95,7 @@ public class ElasticsearchDataSink<InputT> implements DataSink, Serializable {
                                         ::new);
 
         return FlinkSinkProvider.of(
-                new Elasticsearch7SinkBuilder<Event>()
+                new Elasticsearch6SinkBuilder<Event>()
                         .setHosts(hosts)
                         .setEmitter(
                                 (element, context, indexer) -> {

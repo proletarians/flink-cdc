@@ -54,7 +54,7 @@ public class Elasticsearch6DataSinkITCaseTest {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(ElasticsearchDataSinkITCaseTest.class);
-    private static final String ELASTICSEARCH_VERSION = "7.10.2";
+    private static final String ELASTICSEARCH_VERSION = "6.8.20";
     private static final DockerImageName ELASTICSEARCH_IMAGE =
             DockerImageName.parse(
                             "docker.elastic.co/elasticsearch/elasticsearch:"
@@ -181,7 +181,7 @@ public class Elasticsearch6DataSinkITCaseTest {
                         null);
 
         return new ElasticsearchSinkOptions(
-                5, 1, 10, 50 * 1024 * 1024, 1000, 10 * 1024 * 1024, networkConfig, 7, null, null);
+                5, 1, 10, 50 * 1024 * 1024, 1000, 10 * 1024 * 1024, networkConfig, 6, null, null);
     }
 
     private StreamExecutionEnvironment createStreamExecutionEnvironment() {

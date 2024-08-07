@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-
 /** Converter class for serializing row data to Elasticsearch compatible formats. */
 public class ElasticsearchRowConverter {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -51,7 +49,7 @@ public class ElasticsearchRowConverter {
      * @return A SerializationConverter that can handle null values.
      */
     public static SerializationConverter createNullableExternalConverter(
-            DataType  columnType, java.time.ZoneId zoneId) {
+            DataType columnType, java.time.ZoneId zoneId) {
         return wrapIntoNullableExternalConverter(createExternalConverter(columnType, zoneId));
     }
 
@@ -94,7 +92,9 @@ public class ElasticsearchRowConverter {
                 final int decimalPrecision = ((DecimalType) columnType).getPrecision();
                 final int decimalScale = ((DecimalType) columnType).getScale();
                 return (pos, data) ->
-                        data.getDecimal(pos, decimalPrecision, decimalScale).toBigDecimal().toString();
+                        data.getDecimal(pos, decimalPrecision, decimalScale)
+                                .toBigDecimal()
+                                .toString();
             case TINYINT:
                 return (pos, data) -> data.getByte(pos);
             case SMALLINT:
@@ -108,8 +108,7 @@ public class ElasticsearchRowConverter {
             case DOUBLE:
                 return (pos, data) -> data.getDouble(pos);
             case DATE:
-                return (pos, data) ->
-                        LocalDate.ofEpochDay(data.getInt(pos)).format(DATE_FORMATTER);
+                return (pos, data) -> LocalDate.ofEpochDay(data.getInt(pos)).format(DATE_FORMATTER);
             case TIMESTAMP_WITHOUT_TIME_ZONE:
                 return (pos, data) ->
                         data.getTimestamp(pos, DataTypeChecks.getPrecision(columnType))
@@ -132,9 +131,11 @@ public class ElasticsearchRowConverter {
             case ARRAY:
                 return (pos, data) -> convertArrayData(data.getArray(pos), columnType);
             case MAP:
-                return (pos, data) -> writeValueAsString(convertMapData(data.getMap(pos), columnType));
+                return (pos, data) ->
+                        writeValueAsString(convertMapData(data.getMap(pos), columnType));
             case ROW:
-                return (pos, data) -> writeValueAsString(convertRowData(data, pos, columnType, zoneId));
+                return (pos, data) ->
+                        writeValueAsString(convertRowData(data, pos, columnType, zoneId));
             default:
                 throw new UnsupportedOperationException("Unsupported type: " + columnType);
         }
