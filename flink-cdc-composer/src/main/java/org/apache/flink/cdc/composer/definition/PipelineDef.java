@@ -2,9 +2,6 @@ package org.apache.flink.cdc.composer.definition;
 
 import org.apache.flink.cdc.common.annotation.VisibleForTesting;
 import org.apache.flink.cdc.common.configuration.Configuration;
-import org.apache.flink.cdc.common.types.LocalZonedTimestampType;
-import org.apache.flink.cdc.composer.PipelineComposer;
-import org.apache.flink.cdc.composer.PipelineExecution;
 
 import java.time.ZoneId;
 import java.util.List;
@@ -70,13 +67,20 @@ public class PipelineDef {
     @Override
     public String toString() {
         return "PipelineDef{"
-                + "source=" + source
-                + ", sink=" + sink
-                + ", routes=" + routes
-                + ", transforms=" + transforms
-                + ", udfs=" + udfs
-                + ", models=" + models
-                + ", config=" + config
+                + "source="
+                + source
+                + ", sink="
+                + sink
+                + ", routes="
+                + routes
+                + ", transforms="
+                + transforms
+                + ", udfs="
+                + udfs
+                + ", models="
+                + models
+                + ", config="
+                + config
                 + '}';
     }
 

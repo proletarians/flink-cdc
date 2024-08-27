@@ -104,21 +104,24 @@ public class TransformProjectionProcessor {
 
     private static final String PARAM_SEPARATOR = ":::";
 
-
-
     public Schema processSchemaChangeEvent(Schema schema) {
         // 预处理 UDF 描述符，去除名称中的参数
-        List<UserDefinedFunctionDescriptor> processedUdfDescriptors = udfDescriptors.stream()
-                .map(udf -> {
-                    String[] parts = udf.getName().split(PARAM_SEPARATOR, 2);
-                    String name = parts[0];
-                    return new UserDefinedFunctionDescriptor(name, udf.getClasspath());
-                })
-                .collect(Collectors.toList());
+        List<UserDefinedFunctionDescriptor> processedUdfDescriptors =
+                udfDescriptors.stream()
+                        .map(
+                                udf -> {
+                                    String[] parts = udf.getName().split(PARAM_SEPARATOR, 2);
+                                    String name = parts[0];
+                                    return new UserDefinedFunctionDescriptor(
+                                            name, udf.getClasspath());
+                                })
+                        .collect(Collectors.toList());
 
         List<ProjectionColumn> projectionColumns =
                 TransformParser.generateProjectionColumns(
-                        transformProjection.getProjection(), schema.getColumns(), processedUdfDescriptors);
+                        transformProjection.getProjection(),
+                        schema.getColumns(),
+                        processedUdfDescriptors);
         transformProjection.setProjectionColumns(projectionColumns);
         return schema.copy(
                 projectionColumns.stream()
@@ -135,12 +138,11 @@ public class TransformProjectionProcessor {
                     cachedProjectionColumnProcessors.get(i);
             if (projectionColumnProcessor != null) {
                 try {
-                    ProjectionColumn projectionColumn = projectionColumnProcessor.getProjectionColumn();
+                    ProjectionColumn projectionColumn =
+                            projectionColumnProcessor.getProjectionColumn();
                     Object result = projectionColumnProcessor.evaluate(payload, epochTime, opType);
                     valueList.add(
-                            DataTypeConverter.convert(
-                                    result,
-                                    projectionColumn.getDataType()));
+                            DataTypeConverter.convert(result, projectionColumn.getDataType()));
                 } catch (Exception e) {
                     LOG.error("Error evaluating projection column: " + columns.get(i).getName(), e);
                     valueList.add(null); // 或者添加一个默认值
@@ -161,6 +163,7 @@ public class TransformProjectionProcessor {
                 .getRecordDataGenerator()
                 .generate(valueList.toArray(new Object[0]));
     }
+
     private Object getValueFromBinaryRecordData(
             String columnName,
             DataType expectedType,

@@ -170,6 +170,12 @@ limitations under the License.
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-cdc-pipeline-connector-elasticsearch</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
         <!-- CDC connectors test utils -->
         <dependency>
             <groupId>org.apache.flink</groupId>

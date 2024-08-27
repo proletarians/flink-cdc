@@ -42,7 +42,6 @@ import org.apache.flink.streaming.runtime.tasks.StreamTask;
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,12 +70,14 @@ public class PostTransformOperator extends AbstractStreamOperator<Event>
     private final List<Tuple2<String, String>> udfFunctions;
     private List<UserDefinedFunctionDescriptor> udfDescriptors;
     private transient Map<String, Object> udfFunctionInstances;
-    private static final String MODEL_UDF_CLASSPATH = "org.apache.flink.cdc.runtime.operators.model.ModelUdf";
+    private static final String MODEL_UDF_CLASSPATH =
+            "org.apache.flink.cdc.runtime.operators.model.ModelUdf";
     private transient Map<Tuple2<TableId, TransformProjection>, TransformProjectionProcessor>
             transformProjectionProcessorMap;
     private transient Map<Tuple2<TableId, TransformFilter>, TransformFilterProcessor>
             transformFilterProcessorMap;
     private static final String PARAM_SEPARATOR = ":::";
+
     public static PostTransformOperator.Builder newBuilder() {
         return new PostTransformOperator.Builder();
     }
@@ -159,7 +160,6 @@ public class PostTransformOperator extends AbstractStreamOperator<Event>
                         .collect(Collectors.toList());
     }
 
-
     @Override
     public void open() throws Exception {
         super.open();
@@ -185,33 +185,32 @@ public class PostTransformOperator extends AbstractStreamOperator<Event>
         this.transformProjectionProcessorMap = new ConcurrentHashMap<>();
         this.transformFilterProcessorMap = new ConcurrentHashMap<>();
         this.udfFunctionInstances = new ConcurrentHashMap<>();
-        udfDescriptors.forEach(udf -> {
-            try {
-                String fullName = udf.getName(); // 使用完整名称，包括参数
-                Class<?> clazz = Class.forName(udf.getClasspath());
-                Object instance = clazz.newInstance();
+        udfDescriptors.forEach(
+                udf -> {
+                    try {
+                        String fullName = udf.getName(); // 使用完整名称，包括参数
+                        Class<?> clazz = Class.forName(udf.getClasspath());
+                        Object instance = clazz.newInstance();
 
-                if (MODEL_UDF_CLASSPATH.equals(udf.getClasspath())) {
-                    String[] parts = fullName.split(PARAM_SEPARATOR, 2);
-                    String params = parts.length > 1 ? parts[1] : null;
-                    if (params != null) {
-                        ((ModelUdf) instance).configure(params);
+                        if (MODEL_UDF_CLASSPATH.equals(udf.getClasspath())) {
+                            String[] parts = fullName.split(PARAM_SEPARATOR, 2);
+                            String params = parts.length > 1 ? parts[1] : null;
+                            if (params != null) {
+                                ((ModelUdf) instance).configure(params);
+                            }
+                        }
+
+                        udfFunctionInstances.put(fullName, instance); // 使用完整名称作为 key
+
+                        // 初始化 UDF
+                        if (instance instanceof UserDefinedFunction) {
+                            ((UserDefinedFunction) instance).open();
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Failed to instantiate or initialize UDF " + udf.getName(), e);
                     }
-                }
-
-                udfFunctionInstances.put(fullName, instance); // 使用完整名称作为 key
-
-                // 初始化 UDF
-                if (instance instanceof UserDefinedFunction) {
-                    ((UserDefinedFunction) instance).open();
-                }
-            } catch (Exception e) {
-                LOG.error("Failed to instantiate or initialize UDF " + udf.getName(), e);
-            }
-        });
+                });
     }
-
-
 
     @Override
     public void finish() throws Exception {
@@ -486,25 +485,28 @@ public class PostTransformOperator extends AbstractStreamOperator<Event>
             LOG.warn("UDF descriptors is null, skipping UDF initialization");
             return;
         }
-        udfDescriptors.forEach(udf -> {
-            try {
-                String name = udf.getName().split(PARAM_SEPARATOR, 2)[0];
-                if (udf.isCdcPipelineUdf()) {
-                    Object udfInstance = udfFunctionInstances.get(name);
-                    if (udfInstance != null) {
-                        if (udfInstance instanceof UserDefinedFunction) {
-                            ((UserDefinedFunction) udfInstance).open();
-                        } else {
-                            LOG.warn("UDF {} does not implement UserDefinedFunction interface", name);
+        udfDescriptors.forEach(
+                udf -> {
+                    try {
+                        String name = udf.getName().split(PARAM_SEPARATOR, 2)[0];
+                        if (udf.isCdcPipelineUdf()) {
+                            Object udfInstance = udfFunctionInstances.get(name);
+                            if (udfInstance != null) {
+                                if (udfInstance instanceof UserDefinedFunction) {
+                                    ((UserDefinedFunction) udfInstance).open();
+                                } else {
+                                    LOG.warn(
+                                            "UDF {} does not implement UserDefinedFunction interface",
+                                            name);
+                                }
+                            } else {
+                                LOG.warn("UDF instance for {} is null", name);
+                            }
                         }
-                    } else {
-                        LOG.warn("UDF instance for {} is null", name);
+                    } catch (Exception ex) {
+                        LOG.error("Failed to initialize UDF " + udf.getName(), ex);
                     }
-                }
-            } catch (Exception ex) {
-                LOG.error("Failed to initialize UDF " + udf.getName(), ex);
-            }
-        });
+                });
     }
 
     private void destroyUdf() {
@@ -512,25 +514,28 @@ public class PostTransformOperator extends AbstractStreamOperator<Event>
             LOG.warn("UDF descriptors is null, skipping UDF destruction");
             return;
         }
-        udfDescriptors.forEach(udf -> {
-            try {
-                String name = udf.getName().split(PARAM_SEPARATOR, 2)[0];
-                if (udf.isCdcPipelineUdf()) {
-                    Object udfInstance = udfFunctionInstances.get(name);
-                    if (udfInstance != null) {
-                        if (udfInstance instanceof UserDefinedFunction) {
-                            ((UserDefinedFunction) udfInstance).close();
-                        } else {
-                            LOG.warn("UDF {} does not implement UserDefinedFunction interface", name);
+        udfDescriptors.forEach(
+                udf -> {
+                    try {
+                        String name = udf.getName().split(PARAM_SEPARATOR, 2)[0];
+                        if (udf.isCdcPipelineUdf()) {
+                            Object udfInstance = udfFunctionInstances.get(name);
+                            if (udfInstance != null) {
+                                if (udfInstance instanceof UserDefinedFunction) {
+                                    ((UserDefinedFunction) udfInstance).close();
+                                } else {
+                                    LOG.warn(
+                                            "UDF {} does not implement UserDefinedFunction interface",
+                                            name);
+                                }
+                            } else {
+                                LOG.warn("UDF instance for {} is null", name);
+                            }
                         }
-                    } else {
-                        LOG.warn("UDF instance for {} is null", name);
+                    } catch (Exception ex) {
+                        LOG.error("Failed to destroy UDF " + udf.getName(), ex);
                     }
-                }
-            } catch (Exception ex) {
-                LOG.error("Failed to destroy UDF " + udf.getName(), ex);
-            }
-        });
+                });
     }
 
     private String opTypeToRowKind(OperationType opType, char beforeOrAfter) {

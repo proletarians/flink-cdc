@@ -9,8 +9,9 @@ source:
   server-time-zone: UTC
 
 sink:
-  type: values
-  name: Values Sink
+  type: elasticsearch
+  hosts: http://localhost:9200
+  version: 7
 
 
 
@@ -21,12 +22,13 @@ transform:
       title, 
       author, 
       publication_date, 
-      summary('please summary the content', content, title) as content_embedding
+      content,
+      embedding('please summary the content', content, title) as content_embedding
 
 pipeline:
   name: Sync MySQL Database to Values Sink with AI Embeddings
   parallelism: 2
   models:
-    - name: summary
+    - name: embedding
       host: https://api.xty.app/v1/
       key: sk-1t9n8WG06Z3JP9g9567d84D04fBb4a1584C9Cd0a76B1EdF1

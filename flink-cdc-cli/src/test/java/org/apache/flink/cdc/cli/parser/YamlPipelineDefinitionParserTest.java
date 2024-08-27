@@ -502,5 +502,4 @@ class YamlPipelineDefinitionParserTest {
                             ImmutableMap.<String, String>builder()
                                     .put("parallelism", "1")
                                     .build()));
-
 }

@@ -17,37 +17,22 @@
 
 package org.apache.flink.cdc.runtime.functions;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.theokanning.openai.OpenAiApi;
-import com.theokanning.openai.service.OpenAiService;
-import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
-import okhttp3.*;
 import org.apache.flink.cdc.common.data.LocalZonedTimestampData;
 import org.apache.flink.cdc.common.data.TimestampData;
 import org.apache.flink.cdc.common.data.ZonedTimestampData;
 import org.apache.flink.cdc.common.utils.DateTimeUtils;
 
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import retrofit2.Retrofit;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -55,9 +40,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -102,13 +84,14 @@ public class SystemFunctionUtils {
     private static OpenAiEmbeddingModel embeddingModel;
 
     public static void initializeOpenAiEmbeddingModel(String apiKey, String baseUrl) {
-        embeddingModel = OpenAiEmbeddingModel.builder()
-                .apiKey(apiKey)
-                .baseUrl(baseUrl)
-                .modelName(DEFAULT_MODEL_NAME)
-                .timeout(Duration.ofSeconds(30))
-                .maxRetries(3)
-                .build();
+        embeddingModel =
+                OpenAiEmbeddingModel.builder()
+                        .apiKey(apiKey)
+                        .baseUrl(baseUrl)
+                        .modelName(DEFAULT_MODEL_NAME)
+                        .timeout(Duration.ofSeconds(30))
+                        .maxRetries(3)
+                        .build();
     }
 
     public static String getEmbedding(String input, String apiKey, String model) {
@@ -120,21 +103,20 @@ public class SystemFunctionUtils {
         try {
             // 确保 OpenAiEmbeddingModel 已初始化
             if (embeddingModel == null) {
-                initializeOpenAiEmbeddingModel(apiKey, "https://api.gpt.ge/v1/");
+                initializeOpenAiEmbeddingModel(apiKey, "https://api.openai.com/v1/");
             }
 
             // 创建 TextSegment 对象
             TextSegment textSegment = new TextSegment(input, new Metadata());
 
             // 获取嵌入结果
-            List<Embedding> embeddings = embeddingModel.embedAll(Collections.singletonList(textSegment)).content();
+            List<Embedding> embeddings =
+                    embeddingModel.embedAll(Collections.singletonList(textSegment)).content();
 
             if (embeddings != null && !embeddings.isEmpty()) {
                 // 提取嵌入向量并转换为字符串
                 List<Float> embedding = embeddings.get(0).vectorAsList();
-                return embedding.stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(", "));
+                return embedding.stream().map(String::valueOf).collect(Collectors.joining(", "));
             } else {
                 LOG.debug("No embedding results returned for input: {}", input);
                 return "";
@@ -144,9 +126,6 @@ public class SystemFunctionUtils {
             return "";
         }
     }
-
-
-
 
     public static String dateFormat(TimestampData timestamp, String format) {
         return DateTimeUtils.formatTimestampMillis(

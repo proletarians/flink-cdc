@@ -17,7 +17,6 @@
 
 package org.apache.flink.cdc.runtime.typeutils;
 
-import org.apache.calcite.sql.type.ArraySqlType;
 import org.apache.flink.cdc.common.data.DecimalData;
 import org.apache.flink.cdc.common.data.LocalZonedTimestampData;
 import org.apache.flink.cdc.common.data.TimestampData;
@@ -28,10 +27,10 @@ import org.apache.flink.cdc.common.types.DataType;
 import org.apache.flink.cdc.common.types.DataTypes;
 import org.apache.flink.cdc.common.types.RowType;
 import org.apache.flink.cdc.common.types.VarBinaryType;
+import org.apache.flink.cdc.runtime.parser.TransformParser;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.flink.cdc.runtime.parser.TransformParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +52,7 @@ public class DataTypeConverter {
     static final long NANOSECONDS_PER_MILLISECOND = TimeUnit.MILLISECONDS.toNanos(1);
     static final long NANOSECONDS_PER_DAY = TimeUnit.DAYS.toNanos(1);
     private static final Logger LOG = LoggerFactory.getLogger(TransformParser.class);
+
     public static RowType toRowType(List<Column> columnList) {
         DataType[] dataTypes = columnList.stream().map(Column::getType).toArray(DataType[]::new);
         String[] columnNames = columnList.stream().map(Column::getName).toArray(String[]::new);
@@ -182,7 +182,10 @@ public class DataTypeConverter {
             case DECIMAL:
                 return DataTypes.DECIMAL(relDataType.getPrecision(), relDataType.getScale());
             case ARRAY:
-                LOG.debug("Processing ARRAY type: {}, class: {}", relDataType, relDataType.getClass().getName());
+                LOG.debug(
+                        "Processing ARRAY type: {}, class: {}",
+                        relDataType,
+                        relDataType.getClass().getName());
                 RelDataType componentType = relDataType.getComponentType();
                 if (componentType.getSqlTypeName() == SqlTypeName.FLOAT) {
                     return DataTypes.ARRAY(DataTypes.FLOAT());

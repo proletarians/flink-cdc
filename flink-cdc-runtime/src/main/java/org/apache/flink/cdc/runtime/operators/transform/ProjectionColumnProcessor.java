@@ -68,13 +68,15 @@ public class ProjectionColumnProcessor {
         this.udfFunctionInstances = udfFunctionInstances;
     }
 
-    private List<UserDefinedFunctionDescriptor> preprocessUdfDescriptors(List<UserDefinedFunctionDescriptor> descriptors) {
-        return descriptors.stream()
-                .map(this::preprocessUdfDescriptor)
-                .collect(Collectors.toList());
+    private List<UserDefinedFunctionDescriptor> preprocessUdfDescriptors(
+            List<UserDefinedFunctionDescriptor> descriptors) {
+        return descriptors.stream().map(this::preprocessUdfDescriptor).collect(Collectors.toList());
     }
+
     private static final String PARAM_SEPARATOR = ":::";
-    private UserDefinedFunctionDescriptor preprocessUdfDescriptor(UserDefinedFunctionDescriptor descriptor) {
+
+    private UserDefinedFunctionDescriptor preprocessUdfDescriptor(
+            UserDefinedFunctionDescriptor descriptor) {
         String[] parts = descriptor.getName().split(PARAM_SEPARATOR, 2);
         String name = parts[0];
         String params = parts.length > 1 ? parts[1] : null;

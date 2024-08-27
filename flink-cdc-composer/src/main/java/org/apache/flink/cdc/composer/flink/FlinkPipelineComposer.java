@@ -106,7 +106,7 @@ public class FlinkPipelineComposer implements PipelineComposer {
                         stream,
                         pipelineDef.getTransforms(),
                         pipelineDef.getUdfs(),
-                        pipelineDef.getModels());  // 添加 models 参数
+                        pipelineDef.getModels()); // 添加 models 参数
 
         // Schema operator
         SchemaOperatorTranslator schemaOperatorTranslator =
@@ -126,7 +126,7 @@ public class FlinkPipelineComposer implements PipelineComposer {
                         pipelineDef.getTransforms(),
                         pipelineDef.getConfig().get(PipelineOptions.PIPELINE_LOCAL_TIME_ZONE),
                         pipelineDef.getUdfs(),
-                        pipelineDef.getModels());  // 添加 models 参数
+                        pipelineDef.getModels()); // 添加 models 参数
 
         // Build DataSink in advance as schema operator requires MetadataApplier
         DataSinkTranslator sinkTranslator = new DataSinkTranslator();

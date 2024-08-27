@@ -1,11 +1,13 @@
 package org.apache.flink.cdc.composer.definition;
 
 import org.apache.flink.api.java.tuple.Tuple2;
+
 import java.util.Objects;
 
 public class UdfDef {
     private static final String PARAM_SEPARATOR = ":::";
-    private static final String MODEL_UDF_CLASSPATH = "org.apache.flink.cdc.runtime.operators.model.ModelUdf";
+    private static final String MODEL_UDF_CLASSPATH =
+            "org.apache.flink.cdc.runtime.operators.model.ModelUdf";
 
     private final String name;
     private final String classpath;
@@ -76,10 +78,16 @@ public class UdfDef {
 
     @Override
     public String toString() {
-        return "UdfDef{" +
-                "name='" + name + '\'' +
-                ", classpath='" + classpath + '\'' +
-                ", serializedParams='" + serializedParams + '\'' +
-                '}';
+        return "UdfDef{"
+                + "name='"
+                + name
+                + '\''
+                + ", classpath='"
+                + classpath
+                + '\''
+                + ", serializedParams='"
+                + serializedParams
+                + '\''
+                + '}';
     }
 }

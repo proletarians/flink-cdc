@@ -2,6 +2,7 @@ package org.apache.flink.cdc.composer.definition;
 
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.table.functions.ScalarFunction;
+
 import java.util.Objects;
 
 public class ModelDef {
@@ -64,9 +65,9 @@ public class ModelDef {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ModelDef modelDef = (ModelDef) o;
-        return Objects.equals(name, modelDef.name) &&
-                Objects.equals(host, modelDef.host) &&
-                Objects.equals(apiKey, modelDef.apiKey);
+        return Objects.equals(name, modelDef.name)
+                && Objects.equals(host, modelDef.host)
+                && Objects.equals(apiKey, modelDef.apiKey);
     }
 
     @Override
@@ -76,10 +77,16 @@ public class ModelDef {
 
     @Override
     public String toString() {
-        return "ModelDef{" +
-                "name='" + name + '\'' +
-                ", host='" + host + '\'' +
-                ", apiKey='" + apiKey + '\'' +
-                '}';
+        return "ModelDef{"
+                + "name='"
+                + name
+                + '\''
+                + ", host='"
+                + host
+                + '\''
+                + ", apiKey='"
+                + apiKey
+                + '\''
+                + '}';
     }
 }

@@ -20,7 +20,8 @@ import java.util.stream.Collectors;
  */
 public class TransformTranslator {
 
-    private static final String MODEL_UDF_CLASSPATH = "org.apache.flink.cdc.runtime.operators.model.ModelUdf";
+    private static final String MODEL_UDF_CLASSPATH =
+            "org.apache.flink.cdc.runtime.operators.model.ModelUdf";
     private static final String PARAM_SEPARATOR = ":::";
 
     public DataStream<Event> translatePreTransform(
@@ -50,9 +51,7 @@ public class TransformTranslator {
         allFunctions.addAll(convertModelsToUdfs(models));
 
         preTransformFunctionBuilder.addUdfFunctions(
-                allFunctions.stream()
-                        .map(this::udfDefToTuple2)
-                        .collect(Collectors.toList()));
+                allFunctions.stream().map(this::udfDefToTuple2).collect(Collectors.toList()));
         return input.transform(
                 "Transform:Schema", new EventTypeInfo(), preTransformFunctionBuilder.build());
     }
@@ -86,17 +85,13 @@ public class TransformTranslator {
         allFunctions.addAll(convertModelsToUdfs(models));
 
         postTransformFunctionBuilder.addUdfFunctions(
-                allFunctions.stream()
-                        .map(this::udfDefToTuple2)
-                        .collect(Collectors.toList()));
+                allFunctions.stream().map(this::udfDefToTuple2).collect(Collectors.toList()));
         return input.transform(
                 "Transform:Data", new EventTypeInfo(), postTransformFunctionBuilder.build());
     }
 
     private List<UdfDef> convertModelsToUdfs(List<ModelDef> models) {
-        return models.stream()
-                .map(this::modelToUdf)
-                .collect(Collectors.toList());
+        return models.stream().map(this::modelToUdf).collect(Collectors.toList());
     }
 
     private UdfDef modelToUdf(ModelDef model) {
@@ -106,7 +101,8 @@ public class TransformTranslator {
     }
 
     private String serializeModelParams(ModelDef model) {
-        return String.format("{\"name\":\"%s\",\"host\":\"%s\",\"apiKey\":\"%s\"}",
+        return String.format(
+                "{\"name\":\"%s\",\"host\":\"%s\",\"apiKey\":\"%s\"}",
                 model.getName(), model.getHost(), model.getApiKey());
     }
 
