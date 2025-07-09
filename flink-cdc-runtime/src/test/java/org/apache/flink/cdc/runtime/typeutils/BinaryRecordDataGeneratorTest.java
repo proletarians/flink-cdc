@@ -59,6 +59,7 @@ class BinaryRecordDataGeneratorTest {
                         DataTypes.VARCHAR(10),
                         DataTypes.STRING(),
                         DataTypes.DATE(),
+                        DataTypes.DATE(),
                         DataTypes.TIME(),
                         DataTypes.TIME(6),
                         DataTypes.TIMESTAMP(),
@@ -89,8 +90,9 @@ class BinaryRecordDataGeneratorTest {
                     BinaryStringData.fromString("test2"),
                     BinaryStringData.fromString("test3"),
                     DateData.fromEpochDay(1000),
+                    DateData.fromEpochDay(1000).toEpochDay(),
                     TimeData.fromMillisOfDay(200),
-                    TimeData.fromMillisOfDay(300),
+                    TimeData.fromMillisOfDay(300).toMillisOfDay(),
                     TimestampData.fromMillis(100, 1),
                     TimestampData.fromMillis(200, 0),
                     LocalZonedTimestampData.fromEpochMillis(300, 1),
@@ -99,7 +101,7 @@ class BinaryRecordDataGeneratorTest {
                     ZonedTimestampData.of(600, 0, "UTC"),
                     new BinaryRecordDataGenerator(
                                     RowType.of(DataTypes.STRING(), DataTypes.BIGINT()))
-                            .generate(new Object[] {BinaryStringData.fromString("test"), 23L}),
+                            .generate(new Object[] {BinaryStringData.fromString("test"), 24L}),
                     null
                 };
         BinaryRecordData actual = new BinaryRecordDataGenerator(rowType).generate(testData);
@@ -123,22 +125,23 @@ class BinaryRecordDataGeneratorTest {
         assertThat(actual.getString(13)).isEqualTo(BinaryStringData.fromString("test3"));
 
         assertThat(actual.getDate(14)).isEqualTo(testData[14]);
-        assertThat(actual.getTime(15)).isEqualTo(testData[15]);
+        assertThat(actual.getDate(15).toEpochDay()).isEqualTo(testData[15]);
         assertThat(actual.getTime(16)).isEqualTo(testData[16]);
+        assertThat(actual.getTime(17).toMillisOfDay()).isEqualTo(testData[17]);
 
-        assertThat(actual.getTimestamp(17, TimestampType.DEFAULT_PRECISION))
-                .isEqualTo(testData[17]);
-        assertThat(actual.getTimestamp(18, 3)).isEqualTo(testData[18]);
-        assertThat(actual.getLocalZonedTimestampData(19, LocalZonedTimestampType.DEFAULT_PRECISION))
-                .isEqualTo(testData[19]);
-        assertThat(actual.getLocalZonedTimestampData(20, 3)).isEqualTo(testData[20]);
-        assertThat(actual.getZonedTimestamp(21, ZonedTimestampType.DEFAULT_PRECISION))
-                .isEqualTo(testData[21]);
-        assertThat(actual.getZonedTimestamp(22, 3)).isEqualTo(testData[22]);
+        assertThat(actual.getTimestamp(18, TimestampType.DEFAULT_PRECISION))
+                .isEqualTo(testData[18]);
+        assertThat(actual.getTimestamp(19, 3)).isEqualTo(testData[19]);
+        assertThat(actual.getLocalZonedTimestampData(20, LocalZonedTimestampType.DEFAULT_PRECISION))
+                .isEqualTo(testData[20]);
+        assertThat(actual.getLocalZonedTimestampData(21, 3)).isEqualTo(testData[21]);
+        assertThat(actual.getZonedTimestamp(22, ZonedTimestampType.DEFAULT_PRECISION))
+                .isEqualTo(testData[22]);
+        assertThat(actual.getZonedTimestamp(23, 3)).isEqualTo(testData[23]);
 
-        assertThat(actual.getRow(23, 2).getString(0))
+        assertThat(actual.getRow(24, 2).getString(0))
                 .isEqualTo(BinaryStringData.fromString("test"));
-        assertThat(actual.getRow(23, 2).getLong(1)).isEqualTo(23L);
-        assertThat(actual.isNullAt(24)).isTrue();
+        assertThat(actual.getRow(24, 2).getLong(1)).isEqualTo(24L);
+        assertThat(actual.isNullAt(25)).isTrue();
     }
 }

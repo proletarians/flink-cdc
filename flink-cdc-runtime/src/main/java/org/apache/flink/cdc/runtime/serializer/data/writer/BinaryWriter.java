@@ -108,10 +108,18 @@ public interface BinaryWriter {
                 writer.writeInt(pos, (int) o);
                 break;
             case DATE:
-                writer.writeDate(pos, (DateData) o);
+                if (o instanceof DateData) {
+                    writer.writeDate(pos, (DateData) o);
+                } else {
+                    writer.writeInt(pos, (int) o);
+                }
                 break;
             case TIME_WITHOUT_TIME_ZONE:
-                writer.writeTime(pos, (TimeData) o, ((TimeType) type).getPrecision());
+                if (o instanceof TimeData) {
+                    writer.writeTime(pos, (TimeData) o, ((TimeType) type).getPrecision());
+                } else {
+                    writer.writeInt(pos, (int) o);
+                }
                 break;
             case BIGINT:
                 writer.writeLong(pos, (long) o);
