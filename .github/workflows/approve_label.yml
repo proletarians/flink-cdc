@@ -28,6 +28,7 @@ permissions:
   pull-requests: write
 jobs:
   label-when-approved:
+    if: github.repository == 'apache/flink-cdc'
     name: "Label when approved"
     runs-on: ubuntu-latest
     outputs:
