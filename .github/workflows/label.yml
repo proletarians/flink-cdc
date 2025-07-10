@@ -28,9 +28,9 @@ jobs:
     if: github.repository == 'apache/flink-cdc'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
-      issues: write
+      issues: write-all
 
     steps:
       - uses: actions/labeler@v4
