@@ -25,47 +25,19 @@
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0.
 
-name: Labeler (fork only)
-
-on:
-  # 只有在“本仓库”创建或更新 PR 时触发；
-  # 这份文件不会被上游仓库合并，所以不会在那里执行
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write          # 允许自动创建缺失的标签
+name: Labeler
+on: [pull_request_target]
 
 jobs:
-  add-labels:
-    # 如果仓库不是 fork（即上游），就跳过
-    if: github.event.repository.fork == true
+  label:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
-      # 1. 取到包含 labeler.yml 的代码
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      # 2. 判断配置文件是否存在
-      - name: Detect labeler config
-        id: cfg
-        run: |
-          if [ -f .github/labeler.yml ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "found=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # 3. 只有在找到配置文件时才执行 labeler
-      - name: Apply labels
-        if: steps.cfg.outputs.found == 'true'
-        uses: actions/labeler@v5
+      - uses: actions/labeler@v5
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          configuration-path: .github/labeler.yml  # 如用默认路径可省略
-          sync-labels: true                        # 不想自动建标签设为 false
+
 
