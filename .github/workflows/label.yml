@@ -25,19 +25,43 @@
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0.
 
-name: Labeler
+name: CI Pipeline
+
 on: [pull_request_target]
 
 jobs:
+  # 第一个任务：打标签
   label:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-      issues: write
     steps:
       - uses: actions/labeler@v5
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  # 第二个任务：跑测试（在label任务之后）
+  test:
+    # 关键点1: 声明依赖于 label 任务
+    needs: label
+    # 关键点2: 设置执行条件为 "总是执行"
+    if: always()
+    
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Environment
+        # ...你的环境设置步骤
+
+      - name: Run Tests
+        run: |
+          echo "测试任务已开始..."
+          # 你的测试命令
+
 
 
