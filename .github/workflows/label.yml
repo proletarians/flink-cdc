@@ -30,7 +30,6 @@ on: [pull_request_target]
 
 jobs:
   label:
-    if: github.repository == 'apache/flink-cdc'
     runs-on: ubuntu-latest
     permissions:
       contents: read
