@@ -19,11 +19,15 @@ package org.apache.flink.cdc.debezium.event;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.cdc.common.annotation.Internal;
+import org.apache.flink.cdc.common.data.DateData;
 import org.apache.flink.cdc.common.data.DecimalData;
 import org.apache.flink.cdc.common.data.LocalZonedTimestampData;
 import org.apache.flink.cdc.common.data.RecordData;
+import org.apache.flink.cdc.common.data.TimeData;
 import org.apache.flink.cdc.common.data.TimestampData;
 import org.apache.flink.cdc.common.data.binary.BinaryStringData;
+import org.apache.flink.cdc.common.event.ChangeEvent;
+import org.apache.flink.cdc.common.event.CreateTableEvent;
 import org.apache.flink.cdc.common.event.DataChangeEvent;
 import org.apache.flink.cdc.common.event.Event;
 import org.apache.flink.cdc.common.event.TableId;
@@ -59,6 +63,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,10 +87,13 @@ public abstract class DebeziumEventDeserializationSchema extends SourceRecordEve
     /** Changelog Mode to use for encoding changes in Flink internal data structure. */
     protected final DebeziumChangelogMode changelogMode;
 
+    private final Map<io.debezium.relational.TableId, CreateTableEvent> createTableEventCache;
+
     public DebeziumEventDeserializationSchema(
             SchemaDataTypeInference schemaDataTypeInference, DebeziumChangelogMode changelogMode) {
         this.schemaDataTypeInference = schemaDataTypeInference;
         this.changelogMode = changelogMode;
+        this.createTableEventCache = new HashMap<>();
     }
 
     @Override
@@ -284,22 +292,22 @@ public abstract class DebeziumEventDeserializationSchema extends SourceRecordEve
     }
 
     protected Object convertToDate(Object dbzObj, Schema schema) {
-        return (int) TemporalConversions.toLocalDate(dbzObj).toEpochDay();
+        return DateData.fromLocalDate(TemporalConversions.toLocalDate(dbzObj));
     }
 
     protected Object convertToTime(Object dbzObj, Schema schema) {
         if (dbzObj instanceof Long) {
             switch (schema.name()) {
                 case MicroTime.SCHEMA_NAME:
-                    return (int) ((long) dbzObj / 1000);
+                    return TimeData.fromNanoOfDay((long) dbzObj * 1000);
                 case NanoTime.SCHEMA_NAME:
-                    return (int) ((long) dbzObj / 1000_000);
+                    return TimeData.fromNanoOfDay((long) dbzObj);
             }
         } else if (dbzObj instanceof Integer) {
-            return dbzObj;
+            return TimeData.fromNanoOfDay((int) dbzObj * 1_000_000L);
         }
         // get number of milliseconds of the day
-        return TemporalConversions.toLocalTime(dbzObj).toSecondOfDay() * 1000;
+        return TimeData.fromLocalTime(TemporalConversions.toLocalTime(dbzObj));
     }
 
     protected Object convertToTimestamp(Object dbzObj, Schema schema) {
@@ -434,5 +442,15 @@ public abstract class DebeziumEventDeserializationSchema extends SourceRecordEve
                 return converter.convert(dbzObj, schema);
             }
         };
+    }
+
+    public Map<io.debezium.relational.TableId, CreateTableEvent> getCreateTableEventCache() {
+        return createTableEventCache;
+    }
+
+    public void applyChangeEvent(ChangeEvent changeEvent) {
+        createTableEventCache.put(
+                io.debezium.relational.TableId.parse(changeEvent.tableId().identifier()),
+                (CreateTableEvent) changeEvent);
     }
 }
