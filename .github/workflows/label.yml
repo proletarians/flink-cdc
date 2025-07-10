@@ -30,9 +30,9 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      issues: write          # 必须显式声明
+      issues: write
     steps:
-      - uses: actions/labeler@v5   # v5/v4 均可
+      - uses: actions/labeler@v5
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
