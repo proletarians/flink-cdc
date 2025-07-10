@@ -17,10 +17,7 @@
 
 package org.apache.flink.cdc.connectors.fluss.sink;
 
-import org.apache.flink.cdc.common.data.DecimalData;
-import org.apache.flink.cdc.common.data.LocalZonedTimestampData;
-import org.apache.flink.cdc.common.data.RecordData;
-import org.apache.flink.cdc.common.data.TimestampData;
+import org.apache.flink.cdc.common.data.*;
 import org.apache.flink.cdc.common.data.binary.BinaryStringData;
 import org.apache.flink.cdc.common.event.CreateTableEvent;
 import org.apache.flink.cdc.common.event.DataChangeEvent;
@@ -189,7 +186,7 @@ public class FlussEventSerializationSchemaTest {
         record =
                 generator2.generate(
                         new Object[] {
-                            (int) LocalDate.of(2023, 11, 27).toEpochDay(),
+                            DateData.fromLocalDate(LocalDate.of(2023, 11, 27)),
                             3.4f,
                             BinaryStringData.fromString("insert table2"),
                             DecimalData.fromBigDecimal(new BigDecimal("83.23"), 20, 5),
@@ -206,7 +203,7 @@ public class FlussEventSerializationSchemaTest {
         record =
                 generator2.generate(
                         new Object[] {
-                            4,
+                            DateData.fromEpochDay(4),
                             3.4f,
                             BinaryStringData.fromString("insert table2"),
                             DecimalData.fromBigDecimal(new BigDecimal("83.23"), 20, 5),
