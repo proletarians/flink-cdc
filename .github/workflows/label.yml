@@ -28,11 +28,11 @@ jobs:
     if: github.repository == 'apache/flink-cdc'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      issues: write-all
-
+      issues: write          # 必须显式声明
     steps:
-      - uses: actions/labeler@v4
+      - uses: actions/labeler@v5   # v5/v4 均可
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
