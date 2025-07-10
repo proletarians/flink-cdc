@@ -25,7 +25,6 @@ on: [pull_request_target]
 
 jobs:
   label:
-    if: github.repository == 'apache/flink-cdc'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,4 +33,4 @@ jobs:
     steps:
       - uses: actions/labeler@v5
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.PAT_TOKEN }}
