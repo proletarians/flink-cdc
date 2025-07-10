@@ -342,9 +342,22 @@ public class IcebergWriterTest {
                 writeResults.stream().map(MockCommitRequestImpl::new).collect(Collectors.toList());
         icebergCommitter.commit(collection);
         List<String> result = fetchTableContent(catalog, tableId);
-        Assertions.assertThat(result)
-                .containsExactlyInAnyOrder(
-                        "char, varchar, string, false, [1,2,3,4,5,], [1,2,3,4,5,6,7,8,9,10,], 0.00, true, 2, 12345, 12345, 123.456, 123456.789, 00:00:12.345, 2003-10-20, 1970-01-01T00:00, 1970-01-01T00:00Z, 1970-01-01T08:00Z");
+        String expectedTimestampTz =
+                Instant.EPOCH
+                                .atZone(ZoneId.systemDefault()) // 例如 +11
+                                .toLocalDateTime() // 1970-01-01T11:00
+                                .toString()
+                        + "Z"; // 1970-01-01T11:00Z
+
+        String expected =
+                String.format(
+                        "char, varchar, string, false, [1,2,3,4,5,], "
+                                + "[1,2,3,4,5,6,7,8,9,10,], 0.00, true, 2, 12345, 12345, "
+                                + "123.456, 123456.789, 00:00:12.345, 2003-10-20, "
+                                + "1970-01-01T00:00, 1970-01-01T00:00Z, %s",
+                        expectedTimestampTz);
+
+        Assertions.assertThat(result).containsExactlyInAnyOrder(expected);
     }
 
     /** Mock CommitRequestImpl. */
